@@ -6,3 +6,10 @@ Server: esop-db
 Username: esop_admin
 Password: secure_password_123
 Database: esop_management
+
+
+
+
+
+
+#### docker-compose up --build --remove-orphans

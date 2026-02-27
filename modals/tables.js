@@ -12,8 +12,8 @@ const pool = new Pool({
 const createUsersTable = async () => {
     const query = ` 
 
-CREATE TABLE users (
-       id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS users (
+       id UUID PRIMARY KEY,
        full_name VARCHAR(100),
        user_email VARCHAR(100) UNIQUE,
        user_pass VARCHAR(255)
