@@ -1,0 +1,43 @@
+services:
+  # PostgreSQL Database - Stores ESOP data
+  esop-db:
+    image: postgres:15-alpine
+    container_name: esop_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: esop_admin
+      POSTGRES_PASSWORD: secure_password_123
+      POSTGRES_DB: esop_management
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Adminer UI - Web-based DB management (Replacement for pgAdmin)
+  db-manager:
+    image: adminer
+    container_name: esop_adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - esop-db
+
+  # Node/Express Backend - ESOP Logic
+  esop-api:
+    build: .
+    container_name: esop_backend_api
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      DATABASE_URL: postgres://esop_admin:secure_password_123@esop-db:5432/esop_management
+      NODE_ENV: development
+    depends_on:
+      - esop-db
+
+volumes:
+  postgres_data:
