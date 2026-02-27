@@ -1,4 +1,5 @@
 const { createUser } = require('../query');
+const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const createUserController = async (req, res) => {
     const { full_name, user_email, user_pass } = req.body;
@@ -10,7 +11,8 @@ const createUserController = async (req, res) => {
         console.log('Generated UUID:', userId);
         console.log('User data:', { userId, full_name, user_email, user_pass });
         const result = await createUser(userId, full_name, user_email, user_pass);
-        res.status(201).json({ message: 'User registered successfully', user: result.rows[0] });
+        const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.status(201).json({ message: 'User registered successfully', user: result.rows[0], token });
     } catch (err) {
         console.error('Error registering user:', err);
         res.status(500).json({ message: 'Internal server error', error: err.message });
