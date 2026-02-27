@@ -1,5 +1,6 @@
-const { createUser } = require('../query');
+const { createUser, checkUserAlreadyExistInDB } = require('../query');
 const jwt = require('jsonwebtoken');
+const bycrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 const createUserController = async (req, res) => {
     const { full_name, user_email, user_pass } = req.body;
@@ -8,9 +9,8 @@ const createUserController = async (req, res) => {
     }
     try {
         let userId = uuidv4();
-        console.log('Generated UUID:', userId);
-        console.log('User data:', { userId, full_name, user_email, user_pass });
-        const result = await createUser(userId, full_name, user_email, user_pass);
+        let hasshedPassword = await bycrypt.hash(user_pass, 10);
+        const result = await createUser(userId, full_name, user_email, hasshedPassword);
         const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.status(201).json({ message: 'User registered successfully', user: result.rows[0], token });
     } catch (err) {
@@ -19,6 +19,36 @@ const createUserController = async (req, res) => {
     }
 };
 
+const userLoginController = async (req, res) => {
+    const { user_email, user_pass } = req.body;
+    if (!user_email || !user_pass) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+    try {
+        const checkUserExist = await checkUserAlreadyExistInDB(user_email);
+        if (!checkUserExist) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+        const userQuery = 'SELECT id, full_name, user_email, user_pass FROM users WHERE user_email = $1';
+        const result = await pool.query(userQuery, [user_email]);
+        
+        if (result.rows.length === 0) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+        const user = result.rows[0];
+        const isPasswordValid = await bycrypt.compare(user_pass, user.user_pass);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.status(200).json({ message: 'Login successful', user: { id: user.id, full_name: user.full_name, user_email: user.user_email }, token });
+    } catch (err) {
+        console.error('Error during login:', err);
+        res.status(500).json({ message: 'Internal server error', error: err.message });
+    }
+}
+
 module.exports = {
     createUserController,
+    userLoginController
 };

@@ -6,7 +6,6 @@ const pool = new Pool({
 });
 
 const createUser = async (userId, fullName, email, password) => {
-    // Logic 1: Parameterized query (Secure & Industry Standard)
     const sql = `
         INSERT INTO users (id, full_name, user_email, user_pass) 
         VALUES ($1, $2, $3, $4) 
@@ -24,6 +23,18 @@ const createUser = async (userId, fullName, email, password) => {
     }
 };
 
+const checkUserAlreadyExistInDB = async (email) => {
+    const sql = 'SELECT id FROM users WHERE user_email = $1';
+    try {
+        const result = await pool.query(sql, [email]);
+        return result.rows.length > 0; 
+    } catch (dbError) {
+        console.error('Database execution error:', dbError.message);
+        throw dbError; 
+    }
+};
+
 module.exports = {
-    createUser
+    createUser,
+    checkUserAlreadyExistInDB
 };

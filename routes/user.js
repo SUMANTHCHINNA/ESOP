@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
-const { createUserController } = require('../controllers/user');
+const { createUserController,userLoginController } = require('../controllers/user');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -13,6 +13,7 @@ const pool = new Pool({
     port: process.env.DB_PORT,
 });
 
-router.post('/createUser',createUserController);    
+router.post('/createUser',createUserController);   
+router.post('/login', userLoginController); 
      
 module.exports = router;
