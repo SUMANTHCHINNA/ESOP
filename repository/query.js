@@ -34,7 +34,25 @@ const checkUserAlreadyExistInDBAndGetData = async (email) => {
     }
 };
 
+const createCompany = async (name, adminUserId, cin, panNumber, gstin, addressLine1, city, state, pincode, companyEmail, phone, sharePrice, totalPoolShares) => {
+    const sql = `
+        INSERT INTO companies (name, admin_user_id, cin, pan_number, gstin, address_line1, city, state, pincode, company_email, phone, share_price, total_pool_shares) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+        RETURNING *
+    `;
+
+    try {
+        console.log(`--- Attempting to insert company: ${name} ---`);
+        const result = await pool.query(sql, [name, adminUserId, cin, panNumber, gstin, addressLine1, city, state, pincode, companyEmail, phone, sharePrice, totalPoolShares]);
+        return result;
+    } catch (dbError) {
+        console.error('Database execution error:', dbError.message);
+        throw dbError; 
+    }
+};
+
 module.exports = {
     createUser,
-    checkUserAlreadyExistInDBAndGetData
+    checkUserAlreadyExistInDBAndGetData,
+    createCompany
 };

@@ -28,7 +28,7 @@ const createUsersTable = async () => {
     try {
         // execute table creation logic for users
         await pool.query(query);
-        _logger.LogInformation('Users table initialized successfully');
+        console.log('Users table initialized successfully');
     } catch (err) {
         // handle database connection or syntax errors
         console.error('Error creating users table:', err);
@@ -64,9 +64,8 @@ const createCompaniesTable = async () => {
     `;
 
     try {
-        // execute table creation logic for companies
         await pool.query(query);
-        _logger.LogInformation('Companies table initialized successfully');
+        console.log('Companies table initialized successfully');
     } catch (err) {
         console.error('Error creating companies table:', err);
     }
