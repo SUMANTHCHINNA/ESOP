@@ -22,7 +22,6 @@ const createUserController = async (req, res) => {
 
 const userLoginController = async (req, res) => {
     const { user_email, user_pass } = req.body;
-    console.log(req.body);
     if (!user_email || !user_pass) {
         return res.status(400).json({ message: 'Email and password are required' });
     }

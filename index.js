@@ -3,7 +3,7 @@ const app = express();
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRouter');
 const userRoutes = require('./routes/userRouter');
-const { createUsersTable } = require('./modals/tables');
+const { createUsersTable,createCompaniesTable } = require('./modals/tables');
 
 dotenv.config();
 
@@ -20,6 +20,7 @@ app.get('/', (req, res) => {
 
 app.listen(port, () => {
   createUsersTable();
+  createCompaniesTable();
   console.log('Users table creation initiated');
   console.log(`Server running at http://localhost:${port}`);
 }); 
