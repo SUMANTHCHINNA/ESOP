@@ -23,11 +23,11 @@ const createUser = async (userId, fullName, email, password) => {
     }
 };
 
-const checkUserAlreadyExistInDB = async (email) => {
-    const sql = 'SELECT id FROM users WHERE user_email = $1';
+const checkUserAlreadyExistInDBAndGetData = async (email) => {
+    const sql = 'SELECT * FROM users WHERE user_email = $1';
     try {
         const result = await pool.query(sql, [email]);
-        return result.rows.length > 0; 
+        return result.rows; 
     } catch (dbError) {
         console.error('Database execution error:', dbError.message);
         throw dbError; 
@@ -36,5 +36,5 @@ const checkUserAlreadyExistInDB = async (email) => {
 
 module.exports = {
     createUser,
-    checkUserAlreadyExistInDB
+    checkUserAlreadyExistInDBAndGetData
 };

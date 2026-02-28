@@ -1,4 +1,4 @@
-const { createUser, checkUserAlreadyExistInDB } = require('../query');
+const { createUser, checkUserAlreadyExistInDBAndGetData } = require('../repository/query');
 const jwt = require('jsonwebtoken');
 const bycrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
@@ -25,17 +25,11 @@ const userLoginController = async (req, res) => {
         return res.status(400).json({ message: 'Email and password are required' });
     }
     try {
-        const checkUserExist = await checkUserAlreadyExistInDB(user_email);
-        if (!checkUserExist) {
+        const checkUserExistAndGetData = await checkUserAlreadyExistInDBAndGetData(user_email);
+        if (checkUserExistAndGetData.length === 0) {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
-        const userQuery = 'SELECT id, full_name, user_email, user_pass FROM users WHERE user_email = $1';
-        const result = await pool.query(userQuery, [user_email]);
-        
-        if (result.rows.length === 0) {
-            return res.status(401).json({ message: 'Invalid email or password' });
-        }
-        const user = result.rows[0];
+        const user = checkUserExistAndGetData[0];
         const isPasswordValid = await bycrypt.compare(user_pass, user.user_pass);
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid email or password' });
