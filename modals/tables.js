@@ -49,6 +49,7 @@ const createCompaniesTable = async () => {
             city VARCHAR(100),
             state VARCHAR(100),
             pincode VARCHAR(10),
+            logo_url TEXT,
             company_email VARCHAR(255),
             phone VARCHAR(20),
             share_price DECIMAL(15, 2),

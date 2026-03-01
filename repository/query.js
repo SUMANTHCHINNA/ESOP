@@ -84,10 +84,59 @@ const getCompanyDetailsByAdminUserId = async (adminUserId) => {
     }
 }
 
+const updateCompany = async (companyId, name, adminUserId, cin, panNumber, gstin, addressLine1, city, state, pincode, companyEmail, phone, sharePrice, totalPoolShares) => {
+    const sql = `
+        UPDATE companies
+        SET 
+            name = $1,
+            admin_user_id = $2,
+            cin = $3,
+            pan_number = $4,
+            gstin = $5,
+            address_line1 = $6,
+            city = $7,
+            state = $8,
+            pincode = $9,
+            company_email = $10,
+            phone = $11,
+            share_price = $12,
+            total_pool_shares = $13,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $14
+        RETURNING *
+    `;
+
+    try {
+        console.log(`--- Attempting to update company ID: ${companyId} ---`);
+        const queryResponse = await pool.query(sql, [
+            name,           // $1
+            adminUserId,    // $2
+            cin,            // $3
+            panNumber,      // $4
+            gstin,          // $5
+            addressLine1,   // $6
+            city,           // $7
+            state,          // $8
+            pincode,        // $9
+            companyEmail,   // $10
+            phone,          // $11
+            sharePrice,     // $12
+            totalPoolShares, // $13
+            companyId       // $14
+        ]);
+
+        return queryResponse;
+    } catch (dbError) {
+        console.error('Database execution error:', dbError.message);
+        throw dbError;
+    }
+}
+
 
 module.exports = {
     createUser,
     checkUserAlreadyExistInDBAndGetData,
     createCompany,
-    getCompanyDetailsByAdminUserId
+    getCompanyDetailsByAdminUserId,
+    updateCompany
 };

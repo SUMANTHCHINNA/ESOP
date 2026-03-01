@@ -1,4 +1,4 @@
-const { createCompany,getCompanyDetailsByAdminUserId } = require('../repository/query');
+const { createCompany, getCompanyDetailsByAdminUserId,updateCompany } = require('../repository/query');
 
 const createComapany = async (req, res) => {
     const { name, cin, pan_number, gstin, address_line1, city, state, pincode, company_email, phone, share_price, total_pool_shares } = req.body;
@@ -49,7 +49,46 @@ const getComapany = async (req, res) => {
         res.status(500).json({ message: 'Internal server error', error: err.message });
     }
 }
-const updateComapany = async (req, res) => { }
+const updateComapany = async (req, res) => {
+    // Need partial update logic here, so all fields are not mandatory except companyId
+    let companyId = req.query.companyId; // Assuming company ID is passed as a query parameter
+    const { name, cin, pan_number, gstin, address_line1, city, state, pincode, company_email, phone, share_price, total_pool_shares } = req.body;
+
+    if (!name || !cin || !pan_number || !gstin || !address_line1 || !city || !state || !pincode || !company_email || !phone || !share_price || !total_pool_shares) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    try {
+        // update comapny APi logic will be implemented here
+        let companyId = req.query.companyId; // Assuming company ID is passed as a query parameter
+
+        const admin_user_id = req.user.id;
+        const result = await updateCompany(
+            companyId,
+            name,
+            admin_user_id,
+            cin,
+            pan_number,
+            gstin,
+            address_line1,
+            city,
+            state,
+            pincode,
+            company_email,
+            phone,
+            share_price,
+            total_pool_shares
+        );
+
+        res.status(200).json({
+            message: 'Company updated successfully',
+            company: result.rows[0]
+        });
+    } catch (err) {
+        console.error('Error updating company:', err);
+        res.status(500).json({ message: 'Internal server error', error: err.message });
+    }
+}
 
 
 module.exports = {
