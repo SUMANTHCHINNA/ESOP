@@ -1,4 +1,4 @@
-const { createUser, checkUserAlreadyExistInDBAndGetData } = require('../repository/query');
+const { createUser, checkUserAlreadyExistInDBAndGetData,createUserByAdmin } = require('../repository/query');
 const jwt = require('jsonwebtoken');
 const bycrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
@@ -49,9 +49,25 @@ const logoutController = (req, res) => {
     res.clearCookie('token');
     res.status(200).json({ message: 'Logout successful' });
 }
+
+const createUserByAdminController = async (req, res) => {
+    const {company_id,employee_name,email,employee_id,department,position,hire_date,employment_type,pan} = req.body;
+    if (!company_id || !employee_name || !email || !employee_id || !department || !position || !hire_date || !employment_type) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+    try {
+        let hasshedPassword = await bycrypt.hash('Password', 10); 
+        const result = await createUserByAdmin( employee_name, email, hasshedPassword, company_id, employee_id, department, position, pan, hire_date, employment_type);
+        res.status(201).json({ message: 'Employee added successfully', employee: result.rows[0] });
+    } catch (err) {
+        console.error('Error adding employee:', err);
+        res.status(500).json({ message: 'Internal server error', error: err.message });
+    }
+}
  
 module.exports = {
     createUserController,
     userLoginController,
-    logoutController
+    logoutController,
+    createUserByAdminController
 };

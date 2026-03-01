@@ -9,6 +9,11 @@ const authMiddleware = async (req, res, next) => {
     const authHeader = req.header('Authorization');
     const token = authHeader?.replace('Bearer ', '');
 
+    // check cookies
+    if (!token && req.cookies) {
+        token = req.cookies.token;
+    }
+
     if (!token) {
         return res.status(401).json({ message: 'Authorization token missing' });
     }
