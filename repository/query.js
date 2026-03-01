@@ -181,11 +181,47 @@ const updateCompanyByAdmin = async (companyId, adminUserId, updateData) => {
     }
 };
 
+const checkAdminCompanyDetails = async (adminId) => {
+    const sql = 'SELECT * FROM companies WHERE admin_user_id = $1';
+    try {
+        const result = await pool.query(sql, [adminId]);
+        return result.rows;
+    } catch (dbError) {
+        console.error('Database execution error:', dbError.message);
+        throw dbError;
+    }
+};
+
+const getAllEmployeesOfAnCompany = async (companyId) => {
+    const sql = 'SELECT id, full_name, user_email, employee_id, department, position, pan, hire_date, employment_type, is_active FROM users WHERE company_id = $1';
+    try {
+        const result = await pool.query(sql, [companyId]);
+        return result.rows;
+    } catch (dbError) {
+        console.error('Database execution error:', dbError.message);
+        throw dbError;
+    }
+};
+
+const terminateUserById = async (userId) => {
+    const sql = 'UPDATE users SET is_active = FALSE, termination_date = CURRENT_DATE WHERE id = $1 RETURNING *';
+    try {
+        const result = await pool.query(sql, [userId]);
+        return result;
+    } catch (dbError) {
+        console.error('Database execution error:', dbError.message);
+        throw dbError;
+    }
+};
+
 module.exports = {
     createUser,
     checkUserAlreadyExistInDBAndGetData,
     createCompanyByAdmin,
     getCompanyDetailsByAdminUserId,
     updateCompanyByAdmin,
-    createUserByAdmin
+    createUserByAdmin,
+    checkAdminCompanyDetails,
+    getAllEmployeesOfAnCompany,
+    terminateUserById
 };

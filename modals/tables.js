@@ -61,6 +61,7 @@ const createUsersTable = async () => {
             position VARCHAR(100),
             pan VARCHAR(10) UNIQUE,
             hire_date DATE,
+            termination_date DATE,
             
             -- Metadata & Status
             employment_type VARCHAR(50) DEFAULT 'Admin',
