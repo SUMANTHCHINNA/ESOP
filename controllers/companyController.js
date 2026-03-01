@@ -1,6 +1,6 @@
-const { createCompany, getCompanyDetailsByAdminUserId,updateCompany } = require('../repository/query');
+const { createCompanyByAdmin, getCompanyDetailsByAdminUserId,updateCompanyByAdmin } = require('../repository/query');
 
-const createComapany = async (req, res) => {
+const createCompany = async (req, res) => {
     const { name, cin, pan_number, gstin, address_line1, city, state, pincode, company_email, phone, share_price, total_pool_shares } = req.body;
 
     if (!name || !cin || !pan_number || !gstin || !address_line1 || !city || !state || !pincode || !company_email || !phone || !share_price || !total_pool_shares) {
@@ -11,7 +11,7 @@ const createComapany = async (req, res) => {
         const admin_user_id = req.user.id;
 
         // FIX: Ensure 'name' is first and 'admin_user_id' is second to match repository
-        const result = await createCompany(
+        const result = await createCompanyByAdmin(
             name,
             admin_user_id,
             cin,
@@ -36,63 +36,58 @@ const createComapany = async (req, res) => {
         res.status(500).json({ message: 'Internal server error', error: err.message });
     }
 };
-const getComapany = async (req, res) => {
+const getCompany = async (req, res) => {
     try {
         let userId = req.user.id;
-        const comapanyDetails = await getCompanyDetailsByAdminUserId(userId);
-        if (comapanyDetails.length === 0) {
+        const companyDetails = await getCompanyDetailsByAdminUserId(userId);
+        if (companyDetails.length === 0) {
             return res.status(404).json({ message: 'Company not found for the given admin user ID' });
         }
-        res.status(200).json({ company: comapanyDetails[0] });
+        res.status(200).json({ company: companyDetails[0] });
     } catch (err) {
         console.error('Error fetching company details:', err);
         res.status(500).json({ message: 'Internal server error', error: err.message });
     }
 }
-const updateComapany = async (req, res) => {
-    // Need partial update logic here, so all fields are not mandatory except companyId
-    let companyId = req.query.companyId; // Assuming company ID is passed as a query parameter
-    const { name, cin, pan_number, gstin, address_line1, city, state, pincode, company_email, phone, share_price, total_pool_shares } = req.body;
+const updateCompany = async (req, res) => {
+    // Method 1: Extracting ID directly from URL parameters
+    const companyId = req.params.id; 
+    
+    /* // Method 2: Alternative using destructuring if the param name matches
+    // const { id: companyId } = req.params; 
+    */
 
-    if (!name || !cin || !pan_number || !gstin || !address_line1 || !city || !state || !pincode || !company_email || !phone || !share_price || !total_pool_shares) {
-        return res.status(400).json({ message: 'All fields are required' });
+    // Requirement: Only companyId is mandatory for targeting the record
+    if (!companyId) {
+        return res.status(400).json({ message: 'companyId is required in the URL path' });
     }
 
     try {
-        // update comapny APi logic will be implemented here
-        let companyId = req.query.companyId; // Assuming company ID is passed as a query parameter
-
+        // Retrieve the authenticated user's ID from the request object
         const admin_user_id = req.user.id;
-        const result = await updateCompany(
-            companyId,
-            name,
-            admin_user_id,
-            cin,
-            pan_number,
-            gstin,
-            address_line1,
-            city,
-            state,
-            pincode,
-            company_email,
-            phone,
-            share_price,
-            total_pool_shares
-        );
+        
+        // Execute the repository function with dynamic field updates
+        const result = await updateCompanyByAdmin(companyId, admin_user_id, req.body);
+
+        // Check if the database actually found and updated a record
+        if (!result || result.rowCount === 0) {
+            return res.status(404).json({ message: 'Company not found or no changes made' });
+        }
 
         res.status(200).json({
             message: 'Company updated successfully',
             company: result.rows[0]
         });
     } catch (err) {
+        // Log the failure to the console for server-side debugging
         console.error('Error updating company:', err);
         res.status(500).json({ message: 'Internal server error', error: err.message });
     }
-}
+};
 
 
 module.exports = {
-    createComapany,
-    getComapany,
-    updateComapany
+    createCompany,
+    getCompany,
+    updateCompany
 }
