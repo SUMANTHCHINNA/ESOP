@@ -10,13 +10,29 @@ const pool = new Pool({
     port: process.env.DB_PORT,
 });
 
+const createEnums = async () => {
+    const query = `
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'employment_type_enum') THEN
+                CREATE TYPE employment_type_enum AS ENUM ('ADMIN', 'EMPLOYEE', 'EMPLOYEER');
+            END IF;
+        END $$;
+    `;
+    try {
+        await pool.query(query);
+        console.log('Enums initialized successfully');
+    } catch (err) {
+        console.error('Error creating Enums:', err);
+    }
+};
+
 const createCompaniesTable = async () => {
-    // Method 1: Primary organization table with metadata
     const query = `
         CREATE TABLE IF NOT EXISTS companies (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             name VARCHAR(255) NOT NULL,
-            admin_user_id UUID NOT NULL,
+            admin_user_id UUID, 
             cin VARCHAR(21) UNIQUE,
             pan_number VARCHAR(10) UNIQUE,
             gstin VARCHAR(15) UNIQUE,
@@ -34,9 +50,7 @@ const createCompaniesTable = async () => {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `;
-
     try {
-        // Initialize companies before users to avoid foreign key errors
         await pool.query(query);
         console.log('Companies table initialized successfully');
     } catch (err) {
@@ -45,16 +59,13 @@ const createCompaniesTable = async () => {
 };
 
 const createUsersTable = async () => {
-    // Method 1: Combined auth and employee profile schema
     const query = `
         CREATE TABLE IF NOT EXISTS users (
-            -- Primary Identity & Auth
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             user_email VARCHAR(100) UNIQUE NOT NULL,
             full_name VARCHAR(100) NOT NULL,
             user_pass VARCHAR(255) NOT NULL,
             
-            -- Organization & Employee Links
             company_id UUID,
             employee_id VARCHAR(50) UNIQUE,
             department VARCHAR(100),
@@ -63,36 +74,81 @@ const createUsersTable = async () => {
             hire_date DATE,
             termination_date DATE,
             
-            -- Metadata & Status
-            employment_type VARCHAR(50) DEFAULT 'Admin',
+            employment_type employment_type_enum DEFAULT 'ADMIN',
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-            -- Constraints
             CONSTRAINT fk_company 
                 FOREIGN KEY(company_id) 
                 REFERENCES companies(id) 
                 ON DELETE CASCADE
         );
     `;
-
-    /* // Method 2: Minimalist user schema (commented out)
-    const query = `CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY, user_email VARCHAR(100));`;
-    */
-
     try {
-        // execute table creation logic for users
         await pool.query(query);
         console.log('Users table initialized successfully');
     } catch (err) {
-        // handle database connection or syntax errors
         console.error('Error creating users table:', err);
+    }
+};
+
+const createEsopPlanTable = async () => {
+    const query = `
+        CREATE TABLE IF NOT EXISTS esop_plans (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            company_id UUID NOT NULL,
+            plan_name TEXT NOT NULL,
+            total_shares_reserved BIGINT NOT NULL,
+            shares_allocated BIGINT DEFAULT 0,
+            effective_date DATE NOT NULL,
+            expiry_date DATE NOT NULL,
+            plan_type TEXT NOT NULL,
+            currency VARCHAR(3) NOT NULL,
+            
+            vesting_start_reference TEXT NOT NULL,
+            default_vesting_period_years INTEGER NOT NULL,
+            default_vesting_frequency TEXT NOT NULL,
+            default_cliff_months INTEGER DEFAULT 0,
+            vesting_method TEXT NOT NULL,
+            vesting_percentages JSONB DEFAULT NULL,
+            
+            strike_price_type TEXT NOT NULL,
+            default_strike_price DECIMAL(19, 4) NOT NULL,
+            allow_strike_price_override BOOLEAN DEFAULT FALSE,
+            
+            post_termination_exercise_days INTEGER DEFAULT 90,
+            unvested_lapse_on_termination BOOLEAN DEFAULT TRUE,
+            vested_lapse_after_window BOOLEAN DEFAULT TRUE,
+            
+            acceleration_on_change_of_control BOOLEAN DEFAULT FALSE,
+            acceleration_on_termination_without_cause BOOLEAN DEFAULT FALSE,
+            
+            eligible_participants TEXT[] DEFAULT '{}',
+            is_active BOOLEAN DEFAULT TRUE,
+            
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+            CONSTRAINT fk_esop_company
+                FOREIGN KEY(company_id)
+                REFERENCES companies(id)
+                ON DELETE CASCADE
+        );
+    `;
+    try {
+        await pool.query(query);
+        console.log('ESOP Plans table initialized successfully');
+    } catch (err) {
+        console.error('Error creating ESOP Plans table:', err);
     }
 };
 
 module.exports = {
     pool,
+    createEnums,
+    createCompaniesTable,
     createUsersTable,
-    createCompaniesTable
+    createEsopPlanTable,
 };
