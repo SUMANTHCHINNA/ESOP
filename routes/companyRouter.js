@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const middleware = require('../Middlewares/auth');
-const {createCompany,getCompany,updateCompany} = require('../controllers/companyController');
+const {createCompanyController,getCompanyController,updateCompanyController} = require('../controllers/companyController');
 
 router.use(middleware); 
-router.post('/createCompany',createCompany); 
-router.get('/getCompanyDetails',getCompany);
-router.put('/updateCompanyDetails/:id',updateCompany);  
+router.post('/createCompany',createCompanyController); 
+router.get('/getCompanyDetails',getCompanyController);
+router.put('/updateCompanyDetails/:id',updateCompanyController);  
 
      
 module.exports = router;
+
+
+    

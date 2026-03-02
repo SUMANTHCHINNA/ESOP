@@ -1,93 +1,86 @@
-const { createCompanyByAdmin, getCompanyDetailsByAdminUserId,updateCompanyByAdmin } = require('../repository/query');
-
-const createCompany = async (req, res) => {
-    const { name, cin, pan_number, gstin, address_line1, city, state, pincode, company_email, phone, share_price, total_pool_shares } = req.body;
-
-    if (!name || !cin || !pan_number || !gstin || !address_line1 || !city || !state || !pincode || !company_email || !phone || !share_price || !total_pool_shares) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-
+const {createCompanyService,getCompanyService,updateCompanyService} = require('../services/companyService')
+ 
+const createCompanyController = async (req, res) => {
     try {
-        const admin_user_id = req.user.id;
+        const adminId = req.user.id; // From Auth Middleware
 
-        // FIX: Ensure 'name' is first and 'admin_user_id' is second to match repository
-        const result = await createCompanyByAdmin(
-            name,
-            admin_user_id,
-            cin,
-            pan_number,
-            gstin,
-            address_line1,
-            city,
-            state,
-            pincode,
-            company_email,
-            phone,
-            share_price,
-            total_pool_shares
-        );
+        // Pass the body and the user ID to the service
+        const company = await createCompanyService(req.body, adminId);
 
-        res.status(201).json({
+        return res.status(201).json({
             message: 'Company created successfully',
-            company: result.rows[0]
+            company: company
         });
+
     } catch (err) {
-        console.error('Error creating company:', err);
-        res.status(500).json({ message: 'Internal server error', error: err.message });
+        console.error('Error In createCompanyController:', err.message);
+
+        const statusCode = err.statusCode || 500;
+
+        // Check for Unique Constraint violations (CIN or PAN already exists)
+        if (err.code === '23505') {
+            return res.status(409).json({ message: 'Company with this CIN, PAN, or Email already exists' });
+        }
+
+        return res.status(statusCode).json({
+            message: err.message || 'Internal server error'
+        });
     }
 };
-const getCompany = async (req, res) => {
+
+
+const getCompanyController = async (req, res) => {
     try {
-        let userId = req.user.id;
-        const companyDetails = await getCompanyDetailsByAdminUserId(userId);
-        if (companyDetails.length === 0) {
-            return res.status(404).json({ message: 'Company not found for the given admin user ID' });
-        }
-        res.status(200).json({ company: companyDetails[0] });
-    } catch (err) {
-        console.error('Error fetching company details:', err);
-        res.status(500).json({ message: 'Internal server error', error: err.message });
-    }
-}
-const updateCompany = async (req, res) => {
-    // Method 1: Extracting ID directly from URL parameters
-    const companyId = req.params.id; 
-    
-    /* // Method 2: Alternative using destructuring if the param name matches
-    // const { id: companyId } = req.params; 
-    */
+        // Extract ID from Auth Middleware
+        const userId = req.user.id;
 
-    // Requirement: Only companyId is mandatory for targeting the record
-    if (!companyId) {
-        return res.status(400).json({ message: 'companyId is required in the URL path' });
-    }
+        // Call the Service
+        const company = await getCompanyService(userId);
 
-    try {
-        // Retrieve the authenticated user's ID from the request object
-        const admin_user_id = req.user.id;
-        
-        // Execute the repository function with dynamic field updates
-        const result = await updateCompanyByAdmin(companyId, admin_user_id, req.body);
-
-        // Check if the database actually found and updated a record
-        if (!result || result.rowCount === 0) {
-            return res.status(404).json({ message: 'Company not found or no changes made' });
-        }
-
-        res.status(200).json({
-            message: 'Company updated successfully',
-            company: result.rows[0]
+        // Success Response
+        return res.status(200).json({ 
+            message: 'Company details retrieved successfully',
+            company 
         });
+
     } catch (err) {
-        // Log the failure to the console for server-side debugging
-        console.error('Error updating company:', err);
-        res.status(500).json({ message: 'Internal server error', error: err.message });
+        console.error('Error In getCompanyController:', err.message);
+
+        // Dynamic status code based on service error, or default to 500
+        const statusCode = err.statusCode || 500;
+
+        return res.status(statusCode).json({ 
+            message: err.message || 'Internal server error' 
+        });
+    }
+};
+
+const updateCompanyController = async (req, res) => {
+    try {
+        const companyId = req.params.id;
+        const adminUserId = req.user.id; // From Auth Middleware
+
+        // Call Service
+        const updatedCompany = await updateCompanyService(companyId, adminUserId, req.body);
+
+        return res.status(200).json({
+            message: 'Company updated successfully',
+            company: updatedCompany
+        });
+
+    } catch (err) {
+        console.error('Error In updateCompanyController:', err.message);
+        
+        const statusCode = err.statusCode || 500;
+        return res.status(statusCode).json({
+            message: err.message || 'Internal server error'
+        });
     }
 };
 
 
 module.exports = {
-    createCompany,
-    getCompany,
-    updateCompany
+    createCompanyController,
+    getCompanyController,
+    updateCompanyController
 }

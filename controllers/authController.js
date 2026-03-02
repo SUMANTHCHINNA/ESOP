@@ -1,48 +1,69 @@
-const { createUser, checkUserAlreadyExistInDBAndGetData,createUserByAdmin } = require('../repository/query');
-const jwt = require('jsonwebtoken');
-const bycrypt = require('bcrypt');
-const { v4: uuidv4 } = require('uuid');
+const { createUserService,userLoginService,createUserByAdminService } = require('../services/authService')
+const dotenv = require('dotenv')
+dotenv.config();
+
 const createUserController = async (req, res) => {
-    const { full_name, user_email, user_pass } = req.body;
-    if (!full_name || !user_email || !user_pass) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
     try {
-        let userId = uuidv4();
-        let hasshedPassword = await bycrypt.hash(user_pass, 10);
-        const result = await createUser(userId, full_name, user_email, hasshedPassword);
-        const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-        res.status(201).json({ message: 'User registered successfully', user: result.rows[0], token });
+        // Call service with just the data it needs
+        const { newUser, token } = await createUserService(req.body);
+
+        // Set Cookie
+        res.cookie('auth_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production'
+        });
+
+        // Send Success Response
+        return res.status(201).json({
+            message: 'User registered successfully',
+            user: newUser,
+            token
+        });
+
     } catch (err) {
-        console.error('Error registering user:', err);
-        res.status(500).json({ message: 'Internal server error', error: err.message });
+        console.error('Error In CreateUserController:', err.message);
+
+        // Use the status code from the error, or default to 500
+        const statusCode = err.statusCode || 500;
+
+        // Handle Specific DB Errors (e.g., Unique Constraint)
+        if (err.code === '23505') {
+            return res.status(409).json({ message: 'Email already exists' });
+        }
+
+        return res.status(statusCode).json({
+            message: err.message || 'Internal server error'
+        });
     }
 };
 
+
 const userLoginController = async (req, res) => {
-    const { user_email, user_pass } = req.body;
-    if (!user_email || !user_pass) {
-        return res.status(400).json({ message: 'Email and password are required' });
-    }
     try {
-        const checkUserExistAndGetData = await checkUserAlreadyExistInDBAndGetData(user_email);
-        if (checkUserExistAndGetData.length === 0) {
-            return res.status(401).json({ message: 'Invalid email or password' });
-        }
-        const user = checkUserExistAndGetData[0];
-        const isPasswordValid = await bycrypt.compare(user_pass, user.user_pass);
-        if (!isPasswordValid) {
-            return res.status(401).json({ message: 'Invalid email or password' });
-        }
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-        res.status(200).json({ message: 'Login successful', user: { id: user.id, full_name: user.full_name, user_email: user.user_email }, token });
+        const { user, token } = await userLoginService(req.body);
+
+        // Set secure cookie
+        res.cookie('token', token, { 
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 3600000 
+        });
+
+        return res.status(200).json({ 
+            message: 'Login successful', 
+            user, 
+            token 
+        });
+
     } catch (err) {
-        console.error('Error during login:', err);
-        res.status(500).json({ message: 'Internal server error', error: err.message });
+        console.error('Error In userLoginController:', err.message);
+        
+        const statusCode = err.statusCode || 500;
+        return res.status(statusCode).json({ 
+            message: err.message || 'Internal server error' 
+        });
     }
-}
+};
 
 
 const logoutController = (req, res) => {
@@ -51,20 +72,32 @@ const logoutController = (req, res) => {
 }
 
 const createUserByAdminController = async (req, res) => {
-    const {company_id,employee_name,email,employee_id,department,position,hire_date,employment_type,pan} = req.body;
-    if (!company_id || !employee_name || !email || !employee_id || !department || !position || !hire_date || !employment_type) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
     try {
-        let hasshedPassword = await bycrypt.hash('Password', 10); 
-        const result = await createUserByAdmin( employee_name, email, hasshedPassword, company_id, employee_id, department, position, pan, hire_date, employment_type);
-        res.status(201).json({ message: 'Employee added successfully', employee: result.rows[0] });
+        const employee = await createUserByAdminService(req.body);
+
+        return res.status(201).json({ 
+            message: 'Employee added successfully', 
+            employee 
+        });
+
     } catch (err) {
-        console.error('Error adding employee:', err);
-        res.status(500).json({ message: 'Internal server error', error: err.message });
+        console.error('Error In createUserByAdminController:', err.message);
+
+        const statusCode = err.statusCode || 500;
+
+        // Check for specific Postgres Unique Violations (Email or Employee ID)
+        if (err.code === '23505') {
+            return res.status(409).json({ 
+                message: 'Email or Employee ID already exists' 
+            });
+        }
+
+        return res.status(statusCode).json({ 
+            message: err.message || 'Internal server error' 
+        });
     }
-}
- 
+};
+
 module.exports = {
     createUserController,
     userLoginController,

@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRouter');
 const userRoutes = require('./routes/userRouter');
 const companyRoutes = require('./routes/companyRouter');
-const esopPlansRouter = require('./routes/espoPlansRouter');
+const esopPlansRouter = require('./routes/esopPlansRouter');
 const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums } = require('./modals/tables');
 
 dotenv.config();
@@ -22,11 +22,15 @@ app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
-app.listen(port, () => {
-  createUsersTable();
-  createCompaniesTable();
-  createEsopPlanTable();
-  createEnums();
-  console.log('Users table creation initiated');
+app.listen(port, async () => {
+  try {
+    await createUsersTable();
+    await createCompaniesTable();
+    await createEsopPlanTable();
+    await createEnums();
+    console.log('Users table creation initiated');
+  } catch (error) {
+    console.error('Error creating tables:', error);
+  }
   console.log(`Server running at http://localhost:${port}`);
 }); 

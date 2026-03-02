@@ -1,29 +1,21 @@
-const {createEsopPlanByEmployeer} = require('../repository/query');
+const {createEsopPlanService} = require('../services/esopPlanService')
 
-const createEsopPlan = async (req, res) => {
+const createEsopPlanController = async (req, res) => {
     try {
-        const { 
-            company_id, plan_name, total_shares_reserved, shares_allocated, effective_date, expiry_date,
-            plan_type, currency, vesting_start_reference, default_vesting_period_years, default_vesting_frequency,
-            default_cliff_months, vesting_method, vesting_percentages, strike_price_type, default_strike_price, 
-            allow_strike_price_override, post_termination_exercise_days, unvested_lapse_on_termination, 
-            vested_lapse_after_window, acceleration_on_change_of_control, acceleration_on_termination_without_cause,
-            eligible_participants 
-        } = req.body;
+        // Pass req.body to the service
+        const esopPlan = await createEsopPlanService(req.body);
 
-        const result = await createEsopPlanByEmployeer(
-            company_id, plan_name, total_shares_reserved, shares_allocated, effective_date, expiry_date,
-            plan_type, currency, vesting_start_reference, default_vesting_period_years, default_vesting_frequency,
-            default_cliff_months, vesting_method, vesting_percentages, strike_price_type, default_strike_price, 
-            allow_strike_price_override, post_termination_exercise_days, unvested_lapse_on_termination, 
-            vested_lapse_after_window, acceleration_on_change_of_control, acceleration_on_termination_without_cause,
-            eligible_participants
-        );
-
-        res.status(201).json(result.rows[0]);
+        return res.status(201).json({
+            message: 'ESOP Plan created successfully',
+            plan: esopPlan
+        });
     } catch (err) {
-        console.error('Error creating ESOP Plan:', err);
-        res.status(500).json({ error: 'Failed to create ESOP Plan' });
+        console.error('Error In createEsopPlanController:', err.message);
+
+        const statusCode = err.statusCode || 500;
+        return res.status(statusCode).json({
+            message: err.message || 'Failed to create ESOP Plan'
+        });
     }
 };
 
@@ -84,9 +76,9 @@ const updateEsopPlan = async (req, res) => {
 // };
 
 
-module.exports = { 
-    createEsopPlan,
-    getEsopPlans, 
-    updateEsopPlan, 
+module.exports = {
+    createEsopPlanController,
+    getEsopPlans,
+    updateEsopPlan,
     // deleteEsopPlan 
 }

@@ -11,7 +11,7 @@ const authMiddleware = async (req, res, next) => {
 
     // check cookies
     if (!token && req.cookies) {
-        token = req.cookies.token;
+        token = req.cookies.auth_token;
     }
 
     if (!token) {

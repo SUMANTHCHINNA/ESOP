@@ -1,49 +1,77 @@
-const { checkUserAlreadyExistInDBAndGetData,checkAdminCompanyDetails,getAllEmployeesOfAnCompany,terminateUserById } = require('../repository/query');
+const { getUserDetailsService,getCompanyAndEmployeesService,terminateUserService } = require('../services/userService') 
 
 const getUserDetailsController = async (req, res) => {
     try {
+        // req.user is usually populated by your auth middleware
         const userEmail = req.user.user_email;
-        const checkUserExistAndGetData = await checkUserAlreadyExistInDBAndGetData(userEmail);
-        if (checkUserExistAndGetData.length === 0) {
-            return res.status(401).json({ message: 'Invalid email or password' });
-        }
-        const user = checkUserExistAndGetData[0];
-        res.status(200).json({ message: 'User details retrieved successfully', user: { id: user.id, full_name: user.full_name, user_email: user.user_email } });
+
+        // Call the service
+        const userDetails = await getUserDetailsService(userEmail);
+
+        // Success Response
+        return res.status(200).json({
+            message: 'User details retrieved successfully',
+            user: userDetails
+        });
+
     } catch (err) {
-        console.error('Error retrieving user details:', err);
-        res.status(500).json({ message: 'Internal server error', error: err.message });
+        console.error('Error In getUserDetailsController:', err.message);
+
+        const statusCode = err.statusCode || 500;
+        return res.status(statusCode).json({
+            message: err.message || 'Internal server error'
+        });
     }
-}
+};
 
 const getUserDetailsOfAnCompanyController = async (req, res) => {
     try {
-        const adminId = req.user.id; // Assuming admin_id is available in the JWT token payload
-        const AdminCompanyDetails = await checkAdminCompanyDetails(adminId);
-        if (AdminCompanyDetails.length === 0) {
-            return res.status(404).json({ message: 'No company found for the given admin user ID' });
-        }
-        // Employee list of admin working company
-        const userDetailsList = await getAllEmployeesOfAnCompany(AdminCompanyDetails[0].id); // Assuming company_id is stored in users table to link employees to their company
-        res.status(200).json({ message: 'Company details retrieved successfully', company: AdminCompanyDetails[0], employees: userDetailsList });
+        // adminId is extracted from the auth middleware (JWT)
+        const adminId = req.user.id;
+
+        // Call the service to get both company and employee data
+        const { company, employees } = await getCompanyAndEmployeesService(adminId);
+
+        return res.status(200).json({
+            message: 'Company details and employee list retrieved successfully',
+            company,
+            employees
+        });
+
     } catch (err) {
-        console.error('Error retrieving company details:', err);
-        res.status(500).json({ message: 'Internal server error', error: err.message });
+        console.error('Error In getUserDetailsOfAnCompanyController:', err.message);
+
+        const statusCode = err.statusCode || 500;
+        return res.status(statusCode).json({
+            message: err.message || 'Internal server error'
+        });
     }
-}
+};
 
 const terminateUserByIdController = async (req, res) => {
     try {
-        const userId = req.params.id; // Employee ID to be terminated
-        const result = await terminateUserById(userId); // Assuming this function updates the user's status to terminated in the database
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: 'User not found or already terminated' });
-        }
-        res.status(200).json({ message: 'User terminated successfully', user: result.rows[0] });
+        const userId = req.params.id;
+
+        // Call the service
+        const terminatedUser = await terminateUserService(userId);
+
+        // Success Response
+        return res.status(200).json({
+            message: 'User terminated successfully',
+            user: terminatedUser
+        });
+
     } catch (err) {
-        console.error('Error terminating user:', err);
-        res.status(500).json({ message: 'Internal server error', error: err.message });
+        console.error('Error In terminateUserByIdController:', err.message);
+
+        // Use the status code from the error, defaulting to 500
+        const statusCode = err.statusCode || 500;
+        
+        return res.status(statusCode).json({
+            message: err.message || 'Internal server error'
+        });
     }
-}
+};
 
 module.exports = {
     getUserDetailsController,
