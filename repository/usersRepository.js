@@ -37,7 +37,7 @@ const terminateUserById = async (userId) => {
         WHERE id = $1 
         RETURNING id, full_name, user_email, is_active, termination_date;
     `;
-    
+
     try {
         return await pool.query(sql, [userId]);
     } catch (dbError) {
@@ -45,6 +45,8 @@ const terminateUserById = async (userId) => {
         throw dbError;
     }
 };
+
+
 
 module.exports = {
     getAllEmployeesOfAnCompany,

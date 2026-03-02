@@ -60,8 +60,46 @@ const checkUserAlreadyExistInDBAndGetData = async (email) => {
     }
 };
 
+const createBulkUsersByAdmin = async (usersList) => {
+    if (!usersList || usersList.length === 0) return { rows: [], rowCount: 0 };
+
+    const values = [];
+    const placeholders = usersList.map((user, index) => {
+        const offset = index * 10; 
+        
+        // These keys MUST match the object returned in the Service .map()
+        values.push(
+            user.employeeName, 
+            user.email, 
+            user.password, 
+            user.companyId,
+            user.employeeId, 
+            user.department, 
+            user.position, 
+            user.pan, 
+            user.hireDate, 
+            user.employmentType
+        );
+        
+        return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10})`;
+    }).join(', ');
+
+    const sql = `
+        INSERT INTO users (
+            full_name, user_email, user_pass, company_id, 
+            employee_id, department, position, pan, 
+            hire_date, employment_type
+        ) 
+        VALUES ${placeholders} 
+        RETURNING id, full_name, user_email, employee_id;
+    `;
+
+    return await pool.query(sql, values);
+};
+
 module.exports = {
     createUser,
     checkUserAlreadyExistInDBAndGetData,
-    createUserByAdmin
+    createUserByAdmin,
+    createBulkUsersByAdmin
 }

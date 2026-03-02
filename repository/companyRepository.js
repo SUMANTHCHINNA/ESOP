@@ -127,6 +127,8 @@ const updateCompanyByAdmin = async (companyId, adminUserId, updateData) => {
 };
 
 
+
+
 module.exports = {
     createCompanyByAdmin,
     getCompanyDetailsByAdminUserId,
