@@ -117,7 +117,7 @@ const createBulkUsersByAdminService = async (jsonData) => {
     }
 
     // 1. Hash the default password once to save CPU cycles during bulk insert
-    const hashedPassword = await bcrypt.hash('Password@123', 10);
+    const hashedPassword = await bcrypt.hash('Password', 10);
 
     // 2. Map the JSON data to match the Repository's expected keys
     // We use .map() to handle all users from the Excel/CSV
@@ -129,7 +129,7 @@ const createBulkUsersByAdminService = async (jsonData) => {
             employeeName: row.employee_name || row['Full Name'],
             email: row.email || row['Email'],
             password: hashedPassword,
-            companyId: row.companyId, 
+            companyId: row.company_id, 
             employeeId: row.employee_id || row['Employee ID'],
             department: row.department || row['Department'],
             position: row.position || row['Position'],

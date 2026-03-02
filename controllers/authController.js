@@ -107,6 +107,7 @@ const bulkAddEmployeesController = async (req, res) => {
 
         // 2. Convert file to JSON array
         const jsonData = await parseFileToJson(req.file);
+        console.log(jsonData);
 
         // 3. Pass the data and company context to the service
         const createdUsers = await createBulkUsersByAdminService(jsonData);
