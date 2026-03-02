@@ -1,2 +1,6 @@
 employee_name,email,employee_id,department,position,hire_date,employment_type,pan,company_id
-Sumanth C,sumanth@cts.com,EMP099,Tech,Lead,2026-03-01,EMPLOYEE,PNIPS5457E,b6f7a431-a9ac-4a56-8300-37638721230c
+Arjun Kumar,arjun.k@google.com,EMP201,Engineering,Software Engineer,2026-03-01,EMPLOYEE,BKUPK1111A,e3b85bc3-6023-4492-b470-0c3bef6289c7
+Priya Sharma,priya.s@google.com,EMP202,HR,Manager,2026-03-01,EMPLOYEE,CKVPK2222B,e3b85bc3-6023-4492-b470-0c3bef6289c7
+Rohan Verma,rohan.v@google.com,EMP203,Sales,Executive,2026-03-01,EMPLOYEE,DKWPK3333C,e3b85bc3-6023-4492-b470-0c3bef6289c7
+Sneha Reddy,sneha.r@google.com,EMP204,IT,System Admin,2026-03-01,EMPLOYEE,EKXPK4444D,e3b85bc3-6023-4492-b470-0c3bef6289c7
+Vikram Singh,vikram.s@google.com,EMP205,Tech,Lead Developer,2026-03-01,EMPLOYEE,FKYPK5555E,e3b85bc3-6023-4492-b470-0c3bef6289c7

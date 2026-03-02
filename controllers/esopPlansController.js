@@ -1,4 +1,5 @@
-const {createEsopPlanService} = require('../services/esopPlanService')
+const {createEsopPlanService,getEsopPlanService} = require('../services/esopPlanService')
+const {getCompanyId} = require('../repository/usersRepository')
 
 const createEsopPlanController = async (req, res) => {
     try {
@@ -17,16 +18,23 @@ const createEsopPlanController = async (req, res) => {
     }
 };
 
-const getEsopPlans = async (req, res) => {
+const getEsopPlansController = async (req, res) => {
     try {
-        const query = `
-            SELECT * FROM esop_plans;
-        `;
-        const result = await pool.query(query);
-        res.json(result.rows);
+        let email = req.user.user_email;
+        const companyId = await getCompanyId(email);
+        console.log(companyId)
+        const esopPlan = await getEsopPlanService(companyId);
+
+        return res.status(201).json({
+            message: 'ESOP Plans fetched successfully',
+            plan: esopPlan
+        });
     } catch (err) {
-        console.error('Error fetching ESOP Plans:', err);
-        res.status(500).json({ error: 'Failed to fetch ESOP Plans' });
+        console.error('Error In getEsopPlans:', err.message);
+        const statusCode = err.statusCode || 500;
+        return res.status(statusCode).json({
+            message: err.message || 'Failed to create ESOP Plan'
+        });
     }
 };
 
@@ -76,7 +84,7 @@ const updateEsopPlan = async (req, res) => {
 
 module.exports = {
     createEsopPlanController,
-    getEsopPlans,
+    getEsopPlansController,
     updateEsopPlan,
     // deleteEsopPlan 
 }

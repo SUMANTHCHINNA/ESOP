@@ -1,12 +1,12 @@
-const {createEsopPlanByEmployeer} = require('../repository/esopPlansRepository')
-const {validateFields} = require('../utils/validation');
+const { createEsopPlanByEmployeer,getEsopPlansOfAnCompany } = require('../repository/esopPlansRepository')
+const { validateFields } = require('../utils/validation');
 
 const createEsopPlanService = async (planData) => {
     // 1. Define Fields that are ALWAYS required regardless of the vesting method
     const baseRequiredFields = [
         'company_id', 'plan_name', 'total_shares_reserved', 'effective_date', 'expiry_date',
-        'plan_type', 'currency', 'vesting_start_reference', 'default_vesting_period_years', 
-        'default_vesting_frequency', 'default_cliff_months', 'vesting_method', 'strike_price_type', 
+        'plan_type', 'currency', 'vesting_start_reference', 'default_vesting_period_years',
+        'default_vesting_frequency', 'default_cliff_months', 'vesting_method', 'strike_price_type',
         'default_strike_price', 'post_termination_exercise_days'
     ];
 
@@ -43,9 +43,20 @@ const createEsopPlanService = async (planData) => {
 
     // 5. Call Repository
     const result = await createEsopPlanByEmployeer(planData);
-    
+
     return result.rows[0];
 };
+
+const getEsopPlanService = async (companyId) => {
+    try {
+        const result = await getEsopPlansOfAnCompany(companyId);
+        return result.rows;
+    }
+    catch (err) {
+        return err;
+    }
+}
 module.exports = {
-    createEsopPlanService
+    createEsopPlanService,
+    getEsopPlanService
 }

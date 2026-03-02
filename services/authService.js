@@ -91,7 +91,7 @@ const createUserByAdminService = async (body) => {
    
     // 2. Hash Default Password
     // Using a default password 'Password' as per your original code
-    const hashedPassword = await bcrypt.hash('Password', 10);
+    const hashedPassword = await bcrypt.hash('password', 10);
 
     const normalizedEmploymentType = body.employment_type.toUpperCase();
     // 3. Repository Call
@@ -117,7 +117,7 @@ const createBulkUsersByAdminService = async (jsonData) => {
     }
 
     // 1. Hash the default password once to save CPU cycles during bulk insert
-    const hashedPassword = await bcrypt.hash('Password', 10);
+    const hashedPassword = await bcrypt.hash('password', 10);
 
     // 2. Map the JSON data to match the Repository's expected keys
     // We use .map() to handle all users from the Excel/CSV

@@ -20,14 +20,14 @@ const createEsopPlanByEmployeer = async (planData) => {
     `;
 
     const values = [
-        planData.company_id, planData.plan_name, planData.total_shares_reserved, planData.shares_allocated || 0, 
-        planData.effective_date, planData.expiry_date, planData.plan_type, planData.currency, 
+        planData.company_id, planData.plan_name, planData.total_shares_reserved, planData.shares_allocated || 0,
+        planData.effective_date, planData.expiry_date, planData.plan_type, planData.currency,
         planData.vesting_start_reference, planData.default_vesting_period_years, planData.default_vesting_frequency,
-        planData.default_cliff_months, planData.vesting_method, 
+        planData.default_cliff_months, planData.vesting_method,
         planData.vesting_percentages ? JSON.stringify(planData.vesting_percentages) : null, // Store as JSON string for JSONB column
-        planData.strike_price_type, planData.default_strike_price, planData.allow_strike_price_override, 
-        planData.post_termination_exercise_days, planData.unvested_lapse_on_termination, 
-        planData.vested_lapse_after_window, planData.acceleration_on_change_of_control, 
+        planData.strike_price_type, planData.default_strike_price, planData.allow_strike_price_override,
+        planData.post_termination_exercise_days, planData.unvested_lapse_on_termination,
+        planData.vested_lapse_after_window, planData.acceleration_on_change_of_control,
         planData.acceleration_on_termination_without_cause, planData.eligible_participants
     ];
 
@@ -39,6 +39,22 @@ const createEsopPlanByEmployeer = async (planData) => {
     }
 };
 
+
+
+const getEsopPlansOfAnCompany = async (companyId) => {
+    const sql = `
+        select * from esop_plans where company_id = $1;
+    `;
+    try {
+        return await pool.query(sql, [companyId]);
+    }
+    catch (dbError) {
+        console.error('Database execution error:', dbError.message);
+        throw dbError;
+    }
+}
+
 module.exports = {
-    createEsopPlanByEmployeer
+    createEsopPlanByEmployeer,
+    getEsopPlansOfAnCompany
 }
