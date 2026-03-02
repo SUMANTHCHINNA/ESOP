@@ -2,7 +2,6 @@ const {createEsopPlanService} = require('../services/esopPlanService')
 
 const createEsopPlanController = async (req, res) => {
     try {
-        // Pass req.body to the service
         const esopPlan = await createEsopPlanService(req.body);
 
         return res.status(201).json({
@@ -11,7 +10,6 @@ const createEsopPlanController = async (req, res) => {
         });
     } catch (err) {
         console.error('Error In createEsopPlanController:', err.message);
-
         const statusCode = err.statusCode || 500;
         return res.status(statusCode).json({
             message: err.message || 'Failed to create ESOP Plan'
