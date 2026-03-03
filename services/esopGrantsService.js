@@ -1,4 +1,4 @@
-const {createGrantRepository} = require('../repository/esopGrantsRepository')
+const { getGrantDetailsOfAnCompanyRepository } = require('../repository/esopGrantsRepository')
 
 const createGrantService = async (grantData) => {
     // 1. Handle vesting_end_date: Prioritize provided date, otherwise calculate
@@ -38,11 +38,19 @@ const createGrantService = async (grantData) => {
     }
 };
 
-const getGrantDetailsService = async (body) => {
-    await getGrantDetailsRepository();
+const getGrantDetailsOfAnCompanyService = async (companyId) => {
+    if (!companyId) {
+        throw new Error(`Error in getGrantDetailsOfAnCompanyService - CompanyId is : ${companyId}`);
+    }
+    try {
+        const result = await getGrantDetailsOfAnCompanyRepository(companyId);
+        return result
+    } catch (err) {
+        throw err;
+    }
 }
 
 module.exports = {
     createGrantService,
-    getGrantDetailsService
+    getGrantDetailsOfAnCompanyService
 }

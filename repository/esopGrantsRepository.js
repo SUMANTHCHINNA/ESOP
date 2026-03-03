@@ -24,7 +24,7 @@ const createGrantRepository = async (grantData) => {
         grantData.vesting_end_date, grantData.vesting_period_months, grantData.cliff_months,
         grantData.vesting_method, grantData.vesting_percentages, grantData.status || 'active', grantData.notes,
         grantData.vested_shares || 0, // Default to 0 if not provided
-        grantData.exercised_shares || 0, 
+        grantData.exercised_shares || 0,
         grantData.lapsed_shares || 0
     ];
 
@@ -37,11 +37,19 @@ const createGrantRepository = async (grantData) => {
     }
 };
 
-const getGrantDetailsRepository = async () => {
+const getGrantDetailsOfAnCompanyRepository = async (companyId) => {
+    const sql = 'SELECT * FROM esop_grants WHERE company_id = $1';
 
+    try {
+        const result = await pool.query(sql, [companyId]);
+        return result.rows;
+    } catch (dbError) {
+        console.error('Database execution error:', dbError.message);
+        throw dbError;
+    }
 }
 
 module.exports = {
     createGrantRepository,
-    getGrantDetailsRepository
+    getGrantDetailsOfAnCompanyRepository
 }
