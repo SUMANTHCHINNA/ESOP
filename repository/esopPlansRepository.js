@@ -42,19 +42,75 @@ const createEsopPlanByEmployeer = async (planData) => {
 
 
 const getEsopPlansOfAnCompany = async (companyId) => {
-    const sql = `
-        select * from esop_plans where company_id = $1;
-    `;
+    const sql = `SELECT * FROM esop_plans WHERE company_id = $1;`;
+    
     try {
-        return await pool.query(sql, [companyId]);
-    }
-    catch (dbError) {
+        const result = await pool.query(sql, [companyId]);
+        
+        // 1. Safety Check: Return null if no plans found
+        if (result.rows.length === 0) return null;
+
+        // 2. Map through plans to calculate status for each
+        const plansWithStatus = result.rows.map(plan => {
+            const total = parseFloat(plan.total_shares_reserved) || 0;
+            const allocated = parseFloat(plan.shares_allocated) || 0;
+            
+            const available_shares = total - allocated;
+            
+            // 3. Prevent Division by Zero
+            const utilization_percentage = total > 0 
+                ? (allocated / total) * 100 
+                : 0;
+
+            return {
+                ...plan, // Spread the original plan data
+                available_shares,
+                utilization_percentage: utilization_percentage.toFixed(2) // Keep it clean
+            };
+        });
+
+        // Return the list of plans with their calculated statuses
+        return plansWithStatus;
+
+    } catch (dbError) {
         console.error('Database execution error:', dbError.message);
         throw dbError;
     }
 }
 
+
+const updateEsopPlanRepository = async (id, planData) => {
+    const fields = Object.keys(planData);
+    if (fields.length === 0) return null;
+
+    // Dynamically create "column_name = $2, column_name = $3..."
+    const setClause = fields
+        .map((field, index) => `${field} = $${index + 2}`)
+        .join(', ');
+
+    const sql = `
+        UPDATE esop_plans
+        SET ${setClause}, updated_at = NOW()
+        WHERE id = $1
+        RETURNING *;
+    `;
+
+    const values = [id, ...Object.values(planData)];
+
+    try {
+        const result = await pool.query(sql, values);
+        return result.rows[0];
+    } catch (dbError) {
+        console.error('Database Error:', dbError.message);
+        throw dbError;
+    }
+};
+
+
+
+
 module.exports = {
     createEsopPlanByEmployeer,
-    getEsopPlansOfAnCompany
+    getEsopPlansOfAnCompany,
+    updateEsopPlanRepository
 }

@@ -1,4 +1,4 @@
-const { createEsopPlanByEmployeer,getEsopPlansOfAnCompany } = require('../repository/esopPlansRepository')
+const { createEsopPlanByEmployeer, getEsopPlansOfAnCompany, updateEsopPlanRepository,getEsopPlansPoolStatusOfAnCompany } = require('../repository/esopPlansRepository')
 const { validateFields } = require('../utils/validation');
 
 const createEsopPlanService = async (planData) => {
@@ -50,13 +50,35 @@ const createEsopPlanService = async (planData) => {
 const getEsopPlanService = async (companyId) => {
     try {
         const result = await getEsopPlansOfAnCompany(companyId);
-        return result.rows;
+        return result;
     }
     catch (err) {
         return err;
     }
 }
+
+const updateEsopPlanService = async (id, planData) => {
+    if (planData.total_shares_reserved !== undefined && planData.total_shares_reserved < 0) {
+        throw new Error('Total shares reserved cannot be negative');
+    }
+
+    try {
+        const updatedPlan = await updateEsopPlanRepository(id, planData);
+        if (!updatedPlan) {
+            const error = new Error('ESOP Plan not found or no data provided');
+            error.statusCode = 404;
+            throw error;
+        }
+        return updatedPlan;
+    } catch (err) {
+        throw err;
+    }
+};
+
+
+
 module.exports = {
     createEsopPlanService,
-    getEsopPlanService
+    getEsopPlanService,
+    updateEsopPlanService
 }
