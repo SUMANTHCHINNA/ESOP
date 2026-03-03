@@ -47,7 +47,8 @@ const terminateUserById = async (userId) => {
 };
 
 const getCompanyId = async (email) => {
-    const sql = `select company_id from users where user_email = $1`
+    console.log(email);
+    const sql = `select * from users where user_email = $1`
     try {
         const result = await pool.query(sql, [email]);
         return result.rows.length > 0 ? result.rows[0].company_id : null;

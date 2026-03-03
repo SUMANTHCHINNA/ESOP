@@ -5,15 +5,23 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
+
+
 const createCompanyByAdmin = async (companyData) => {
-    const sql = `
+    // 1. Define the SQL for inserting the company
+    const insertCompanySql = `
         INSERT INTO companies (
             name, admin_user_id, cin, pan_number, gstin, 
             address_line1, city, state, pincode, 
             company_email, phone, share_price, total_pool_shares
         ) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
-        RETURNING *
+        RETURNING id;
+    `;
+
+    // 2. Define the SQL for updating the admin user
+    const updateUserSql = `
+        UPDATE users SET company_id = $1 WHERE id = $2;
     `;
 
     const values = [
@@ -32,14 +40,33 @@ const createCompanyByAdmin = async (companyData) => {
         companyData.total_pool_shares
     ];
 
+    const client = await pool.connect(); // Get a client from the pool for a transaction
+
     try {
+        await client.query('BEGIN'); // Start Transaction
+        
         console.log(`--- DB: Attempting to insert company: ${companyData.name} ---`);
-        return await pool.query(sql, values);
+        
+        // Step 1: Insert Company
+        const companyRes = await client.query(insertCompanySql, values);
+        const newCompanyId = companyRes.rows[0].id;
+
+        // Step 2: Update User's company_id
+        console.log(`--- DB: Updating Admin User ${companyData.admin_user_id} with new Company ID ---`);
+        await client.query(updateUserSql, [newCompanyId, companyData.admin_user_id]);
+
+        await client.query('COMMIT'); // Save changes
+        
+        return companyRes; // Returning the company result as requested
     } catch (dbError) {
+        await client.query('ROLLBACK'); // Undo changes if something fails
         console.error('Database execution error:', dbError.message);
         throw dbError;
+    } finally {
+        client.release(); // Return client to pool
     }
 };
+
 
 const getCompanyDetailsByAdminUserId = async (adminUserId) => {
     const sql = 'SELECT * FROM companies WHERE admin_user_id = $1';

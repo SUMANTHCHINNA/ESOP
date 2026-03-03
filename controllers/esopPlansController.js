@@ -22,7 +22,6 @@ const getEsopPlansController = async (req, res) => {
     try {
         let email = req.user.user_email;
         const companyId = await getCompanyId(email);
-        console.log(companyId)
         const esopPlan = await getEsopPlanService(companyId);
 
         return res.status(201).json({
