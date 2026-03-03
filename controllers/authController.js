@@ -1,5 +1,5 @@
 const { createUserService, userLoginService, createUserByAdminService, createBulkUsersByAdminService } = require('../services/authService')
-const {parseFileToJson} = require('../utils/fileParser');
+const { parseFileToJson } = require('../utils/fileParser');
 const dotenv = require('dotenv')
 dotenv.config();
 
@@ -18,7 +18,7 @@ const createUserController = async (req, res) => {
         return res.status(201).json({
             message: 'User registered successfully',
             user: newUser,
-            token
+            session: { access_token : token }
         });
 
     } catch (err) {
@@ -53,7 +53,7 @@ const userLoginController = async (req, res) => {
         return res.status(200).json({
             message: 'Login successful',
             user,
-            token
+            session : {access_token : token}
         });
 
     } catch (err) {

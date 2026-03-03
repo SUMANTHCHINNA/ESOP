@@ -145,10 +145,56 @@ const createEsopPlanTable = async () => {
     }
 };
 
+
+const createEsopGrantsTable = async () => {
+    const query = `
+        CREATE TABLE IF NOT EXISTS esop_grants (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            
+            -- Foreign Key Connections
+            company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+            employee_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            esop_plan_id UUID NOT NULL REFERENCES esop_plans(id) ON DELETE CASCADE,
+            
+            -- Grant Details
+            grant_name VARCHAR(255) NOT NULL,
+            grant_date DATE NOT NULL DEFAULT CURRENT_DATE,
+            total_shares DECIMAL(15, 2) NOT NULL CHECK (total_shares > 0),
+            exercise_price DECIMAL(15, 2) NOT NULL,
+            
+            -- Vesting Logic
+            vesting_start_date DATE NOT NULL,
+            vesting_end_date DATE NOT NULL,
+            vesting_period_months INT NOT NULL,
+            cliff_months INT DEFAULT 0,
+            vesting_method VARCHAR(50) NOT NULL, 
+            vesting_percentages JSONB DEFAULT NULL, 
+            
+            -- Tracking Shares
+            vested_shares DECIMAL(15, 2) DEFAULT 0,
+            exercised_shares DECIMAL(15, 2) DEFAULT 0,
+            lapsed_shares DECIMAL(15, 2) DEFAULT 0,
+            
+            -- Status and Meta
+            status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'lapsed', 'cancelled', 'fully_exercised')),
+            notes TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+    `;
+    try {
+        await pool.query(query);
+        console.log('createEsopGrantsTable table initialized successfully');
+    } catch (err) {
+        console.error('Error creating users table:', err);
+    }
+}
+
 module.exports = {
     pool,
     createEnums,
     createCompaniesTable,
     createUsersTable,
     createEsopPlanTable,
+    createEsopGrantsTable
 };
