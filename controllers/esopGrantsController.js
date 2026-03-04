@@ -1,4 +1,4 @@
-const { createGrantService, getGrantDetailsOfAnCompanyService } = require('../services/esopGrantsService')
+const { createGrantService, getGrantDetailsOfAnCompanyService,getEmployeeGrantsService } = require('../services/esopGrantsService')
 const { getCompanyId } = require('../repository/usersRepository')
 
 const createGrantController = async (req, res) => {
@@ -38,8 +38,20 @@ const getGrantDetailsOfAnCompanyController = async (req, res) => {
     }
 }
 
-const getEmployeeGrantsController = async(req,res) =>{
-    
+const getEmployeeGrantsController = async (req, res) => {
+    try {
+        let employeeId = req.user.id;
+        let companyId = await getCompanyId(req.user.user_email);
+        const grantDetails = await getEmployeeGrantsService(employeeId, companyId);
+        return res.status(201).json({
+            message: 'Grants of an Employee Fetched Successfully',
+            data: grantDetails
+        });
+    }
+    catch (error) {
+        console.error('Error in getEmployeeGrantsController :', err.message);
+        return res.status(500).json({ error: err.message });
+    }
 }
 
 module.exports = {
