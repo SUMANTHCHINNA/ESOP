@@ -1,5 +1,5 @@
 const { getCompanyId } = require('../repository/usersRepository');
-const { createExerciseService } = require('../services/exerciseService')
+const { createExerciseService, getExerciseHistoryOfGrantService,getExercisesUponStatusService } = require('../services/exerciseService')
 const { getEmployeeGrantDetailsRepository } = require('../repository/esopGrantsRepository')
 
 const createExerciseController = async (req, res) => {
@@ -21,7 +21,7 @@ const createExerciseController = async (req, res) => {
 
         return res.status(201).json({
             message: 'Exercise created successfully',
-            exercise: result 
+            exercise: result
         });
     }
     catch (err) {
@@ -33,6 +33,55 @@ const createExerciseController = async (req, res) => {
     }
 }
 
+const getExerciseHistroyOfGrantController = async (req, res) => {
+    try {
+        const grantId = req.params.id;
+
+        // Await the service and capture the returned data
+        const history = await getExerciseHistoryOfGrantService(grantId);
+
+        return res.status(200).json({
+            success: true,
+            count: history.length,
+            data: history
+        });
+    } catch (err) {
+        console.error('Error In getExerciseHistroyOfGrantController:', err.message);
+
+        const statusCode = err.statusCode || 500;
+        return res.status(statusCode).json({
+            success: false,
+            message: err.message || 'Failed to fetch Exercise History'
+        });
+    }
+};
+
+const getExercisesUponStatusController = async (req, res) => {
+    try {
+        // GET requests use req.query for ?status=value
+        const { status } = req.query; 
+
+        const data = await getExercisesUponStatusService(status);
+
+        return res.status(200).json({
+            success: true,
+            count: data.length,
+            data: data
+        });
+    } catch (err) {
+        // Corrected variable from 'error' to 'err' to prevent reference errors
+        console.error('Error In getExercisesUponStatusController:', err.message);
+
+        const statusCode = err.statusCode || 500;
+        return res.status(statusCode).json({
+            success: false,
+            message: err.message || 'Failed to fetch Exercises'
+        });
+    }
+};
+
 module.exports = {
-    createExerciseController
+    createExerciseController,
+    getExerciseHistroyOfGrantController,
+    getExercisesUponStatusController
 }

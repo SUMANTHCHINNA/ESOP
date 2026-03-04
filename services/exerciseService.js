@@ -1,4 +1,4 @@
-const { createExerciseRepository } = require('../repository/exerciseRepository')
+const { createExerciseRepository,getExerciseHistoryOfGrantRepository,getExercisesUponStatusRepository } = require('../repository/exerciseRepository')
 const {validateFields} = require('../utils/validation')
 
 const createExerciseService = async (body, employeeId, companyId, exercise_price) => {
@@ -19,6 +19,36 @@ const createExerciseService = async (body, employeeId, companyId, exercise_price
         throw err; 
     }
 }
+
+const getExerciseHistoryOfGrantService = async (grantId) => {
+    try {
+        if (!grantId) {
+            const error = new Error('Grant ID is required');
+            error.statusCode = 400;
+            throw error;
+        }
+        return await getExerciseHistoryOfGrantRepository(grantId);
+    } catch (err) {
+        // MUST throw here so the Controller's catch block is triggered
+        throw err;
+    }
+};
+
+const getExercisesUponStatusService = async (status) => {
+    try {
+        if (!status) {
+            const error = new Error('Status parameter is required');
+            error.statusCode = 400;
+            throw error;
+        }
+        return await getExercisesUponStatusRepository(status);
+    } catch (err) {
+        throw err;
+    }
+};
+
 module.exports = {
-    createExerciseService
+    createExerciseService,
+    getExerciseHistoryOfGrantService,
+    getExercisesUponStatusService
 }

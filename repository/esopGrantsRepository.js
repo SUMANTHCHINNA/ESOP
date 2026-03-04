@@ -50,9 +50,9 @@ const getGrantDetailsOfAnCompanyRepository = async (companyId) => {
 }
 
 const getEmployeeGrantsRepository = async (empId, companyId) => {
-    const sql = 'SELECT * FROM esop_grants WHERE company_id = $1 AND employee_id = $2 ORDER BY grant_date';
+    const sql = 'SELECT * FROM esop_grants WHERE company_id = $1 AND employee_id = $2 ORDER BY grant_date DESC';
     try {
-        const result = await pool.query(sql, [companyId,empId]);
+        const result = await pool.query(sql, [companyId, empId]);
         console.log(result.rows)
         return result.rows;
     }
@@ -62,20 +62,57 @@ const getEmployeeGrantsRepository = async (empId, companyId) => {
     }
 }
 
-const getEmployeeGrantDetailsRepository = async(grantId) => {
+const getEmployeeGrantDetailsRepository = async (grantId) => {
     const sql = 'SELECT * FROM esop_grants WHERE id = $1';
-    try{
+    try {
         const result = await pool.query(sql, [grantId]);
         return result.rows[0];
     }
-    catch(DbErr){
+    catch (DbErr) {
         return DbErr;
     }
 }
+
+const updateGrantsRepository = async (grantId, updateFields) => {
+    const keys = Object.keys(updateFields);
+    if (keys.length === 0) return null;
+
+    const setClause = keys.map((key, index) => {
+        if (key === 'exercised_shares' || key === 'vested_shares' || key === 'lapsed_shares') {
+            return `${key} = ${key} + $${index + 1}`;
+        }
+        return `${key} = $${index + 1}`;
+    }).join(', ');
+
+    const sql = `
+        UPDATE esop_grants 
+        SET 
+            ${setClause}, 
+            status = CASE 
+                WHEN (exercised_shares + lapsed_shares) >= total_shares 
+                THEN 'fully_exercised'::grant_status_enum
+                ELSE status::grant_status_enum  -- Added explicit cast here
+            END,
+            updated_at = NOW()
+        WHERE id = $${keys.length + 1}
+        RETURNING *;
+    `;
+
+    const values = [...Object.values(updateFields), grantId];
+
+    try {
+        const result = await pool.query(sql, values);
+        return result.rows[0];
+    } catch (dbError) {
+        console.error('Database Error in updateGrantsRepository:', dbError.message);
+        throw dbError;
+    }
+};
 
 module.exports = {
     createGrantRepository,
     getGrantDetailsOfAnCompanyRepository,
     getEmployeeGrantsRepository,
-    getEmployeeGrantDetailsRepository
+    getEmployeeGrantDetailsRepository,
+    updateGrantsRepository
 }

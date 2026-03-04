@@ -15,3 +15,8 @@ curl -X POST https://didactic-goggles-9v5rq6prr5x3p5r5-3000.app.github.dev/api/a
 
 
 #### docker-compose up --build --remove-orphans
+
+
+''
+https://didactic-goggles-9v5rq6prr5x3p5r5-3000.app.github.dev/api/exercises/getExercisesUponStatus?status=pending
+''

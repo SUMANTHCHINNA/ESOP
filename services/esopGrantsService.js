@@ -1,4 +1,4 @@
-const { getGrantDetailsOfAnCompanyRepository,getEmployeeGrantsRepository } = require('../repository/esopGrantsRepository')
+const { getGrantDetailsOfAnCompanyRepository, getEmployeeGrantsRepository,updateGrantsRepository } = require('../repository/esopGrantsRepository')
 
 const createGrantService = async (grantData) => {
     // 1. Handle vesting_end_date: Prioritize provided date, otherwise calculate
@@ -52,7 +52,7 @@ const getGrantDetailsOfAnCompanyService = async (companyId) => {
 
 const getEmployeeGrantsService = async (empId, companyId) => {
     try {
-        const result = await getEmployeeGrantsRepository(empId,companyId);
+        const result = await getEmployeeGrantsRepository(empId, companyId);
         return result
     }
     catch (err) {
@@ -60,8 +60,28 @@ const getEmployeeGrantsService = async (empId, companyId) => {
     }
 }
 
+const updateGrantsService = async (grantId, updateData) => {
+    try {
+        // Remove restricted fields
+        const { id, created_at, total_shares, ...validData } = updateData;
+
+        if (Object.keys(validData).length === 0) {
+            const error = new Error('No valid fields provided for update');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        return await updateGrantsRepository(grantId, validData);
+    }
+    catch (err) {
+        throw err;
+    }
+};
+
+
 module.exports = {
     createGrantService,
     getGrantDetailsOfAnCompanyService,
-    getEmployeeGrantsService
+    getEmployeeGrantsService,
+    updateGrantsService
 }
