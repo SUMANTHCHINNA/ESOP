@@ -50,10 +50,10 @@ const getGrantDetailsOfAnCompanyRepository = async (companyId) => {
 }
 
 const getEmployeeGrantsRepository = async (empId, companyId) => {
-     const sql = 'SELECT * FROM esop_grants WHERE employee_id = $1 AND company_id = $2';
+    const sql = 'SELECT * FROM esop_grants WHERE company_id = $1 AND employee_id = $2 ORDER BY grant_date';
     try {
-        const result = await pool.query(sql, [empId,companyId]);
-        console.log(result);
+        const result = await pool.query(sql, [companyId,empId]);
+        console.log(result.rows)
         return result.rows;
     }
     catch (DbError) {
@@ -62,8 +62,20 @@ const getEmployeeGrantsRepository = async (empId, companyId) => {
     }
 }
 
+const getEmployeeGrantDetailsRepository = async(grantId) => {
+    const sql = 'SELECT * FROM esop_grants WHERE id = $1';
+    try{
+        const result = await pool.query(sql, [grantId]);
+        return result.rows[0];
+    }
+    catch(DbErr){
+        return DbErr;
+    }
+}
+
 module.exports = {
     createGrantRepository,
     getGrantDetailsOfAnCompanyRepository,
-    getEmployeeGrantsRepository
+    getEmployeeGrantsRepository,
+    getEmployeeGrantDetailsRepository
 }

@@ -5,8 +5,9 @@ const authRoutes = require('./routes/authRouter');
 const userRoutes = require('./routes/userRouter');
 const companyRoutes = require('./routes/companyRouter');
 const esopPlansRouter = require('./routes/esopPlansRouter');
-const esopGrantsRouter = require('./routes/esopGrantsRouter')
-const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums,createEsopGrantsTable } = require('./modals/tables');
+const esopGrantsRouter = require('./routes/esopGrantsRouter');
+const exerciseRouter = require('./routes/exerciseRouter')
+const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums,createEsopGrantsTable,createExercisesTable } = require('./modals/tables');
 
 dotenv.config();
 
@@ -18,6 +19,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/esopPlans', esopPlansRouter);
 app.use('/api/esopGrants', esopGrantsRouter);
+app.use('/api/exercises', exerciseRouter);
+
+
 
 const port = process.env.PORT || 3000;
 app.get('/', (req, res) => {
@@ -31,6 +35,7 @@ app.listen(port, async () => {
     await createEsopPlanTable();
     await createEnums();
     await createEsopGrantsTable();
+    await createExercisesTable();
     console.log('Users table creation initiated');
   } catch (error) {
     console.error('Error creating tables:', error);
