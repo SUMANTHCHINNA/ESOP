@@ -6,7 +6,8 @@ const userRoutes = require('./routes/userRouter');
 const companyRoutes = require('./routes/companyRouter');
 const esopPlansRouter = require('./routes/esopPlansRouter');
 const esopGrantsRouter = require('./routes/esopGrantsRouter');
-const exerciseRouter = require('./routes/exerciseRouter')
+const exerciseRouter = require('./routes/exerciseRouter');
+const fmvValuationRouter = require('./routes/fmvValiadtionRouter')
 const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums,createEsopGrantsTable,createExercisesTable, createFvmValuationsTable } = require('./modals/tables');
 
 dotenv.config();
@@ -20,6 +21,7 @@ app.use('/api/company', companyRoutes);
 app.use('/api/esopPlans', esopPlansRouter);
 app.use('/api/esopGrants', esopGrantsRouter);
 app.use('/api/exercises', exerciseRouter);
+app.use('/api/fmvValuation',fmvValuationRouter);
 
 
 
