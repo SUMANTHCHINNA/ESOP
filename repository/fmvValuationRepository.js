@@ -18,7 +18,7 @@ const createValuationRepository = async (data) => {
                 effective_to = ($1::DATE - INTERVAL '1 day'),
                 updated_at = NOW()
             WHERE company_id = $2 AND is_active = TRUE`;
-        
+
         await client.query(deactivateSql, [data.effective_from, data.company_id]);
 
         // 2. Insert the new active valuation
@@ -59,6 +59,39 @@ const createValuationRepository = async (data) => {
     }
 };
 
+const getActiveValuationRepository = async (companyId) => {
+    const sql = `
+        SELECT * FROM fmv_valuations 
+        WHERE company_id = $1 AND is_active = TRUE 
+        LIMIT 1`;
+    const result = await pool.query(sql, [companyId]);
+    return result.rows[0];
+};
+
+const getValuationHistoryRepository = async (companyId) => {
+    const sql = `
+        SELECT * FROM fmv_valuations 
+        WHERE company_id = $1 
+        ORDER BY effective_from DESC, created_at DESC`;
+    const result = await pool.query(sql, [companyId]);
+    return result.rows;
+};
+
+const getValuationByDateRepository = async (companyId, targetDate) => {
+    const sql = `
+        SELECT * FROM fmv_valuations 
+        WHERE company_id = $1 
+        AND $2::DATE >= effective_from 
+        AND ($2::DATE <= effective_to OR effective_to IS NULL)
+        LIMIT 1`;
+
+    const result = await pool.query(sql, [companyId, targetDate]);
+    return result.rows[0];
+};
+
 module.exports = {
-    createValuationRepository
+    createValuationRepository,
+    getActiveValuationRepository,
+    getValuationHistoryRepository,
+    getValuationByDateRepository
 }

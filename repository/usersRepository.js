@@ -51,6 +51,7 @@ const getCompanyId = async (email) => {
     const sql = `select * from users where user_email = $1`
     try {
         const result = await pool.query(sql, [email]);
+        console.log(`Result : ${result.rows[0].company_id}`);
         return result.rows.length > 0 ? result.rows[0].company_id : null;
     }
     catch (dbError) {
