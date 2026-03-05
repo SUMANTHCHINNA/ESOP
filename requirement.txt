@@ -1,0 +1,330 @@
+ESOP
+
+## Authentication 
+1.  Sign Up (Admin/Employer) 				-- Done
+2.  Sign In  						-- Done
+3.  Get Current User					-- Done
+4.  Sign Out						-- Done
+    // Update user                                      -- Done
+
+
+## Companies
+5.  Create Company					-- Done
+6.  Get Company Details					-- Done
+7.  Update Company					-- Done
+
+
+## Employees
+8.  Create Employee					-- Done
+9.  List Employees					-- Done
+10. Get Employee with Grants				-- Done
+11. Update Employee Status (Termination)		-- Done
+12. Bulk Insert Employees				-- Done
+
+
+## ESOP Plans
+13. Create ESOP Plan					-- Done
+14. Create Percentage-Based Plan			-- Done
+15. List ESOP Plans with Pool Status			-- Done
+
+
+## Grants
+
+16. Create Grant					-- Done
+17. Get Grant with Full Details				-- Not Done
+18. List Grants for Company				-- Done
+19. Get Employee's Grants				-- Done
+    // Update grant's exercised_shares                  -- Done
+
+
+## Exercise Records
+20. Record Exercise					-- Done
+21. List Exercises					-- Done
+22. Get Exercise History for Grant			-- Done
+23. Submit Exercise Request (Employee)			-- Done -- same as create Exercises
+24. List Pending Requests (Admin)			-- Done
+25. Approve Exercise Request				-- Done
+26. Reject Exercise Request				-- Done	
+	
+
+## FMV Valuations
+
+27. Create Valuation					-- Done
+28. Get Current FMV					-- Done
+29. Get FMV History					-- Done
+30. Get FMV for Specific Date				-- Done
+
+
+## Documents
+
+31. Create Document Record				-- Not Done
+32. List Documents for Employee				-- Not Done
+33. List Documents for Grant				-- Not Done
+34. Upload Document to Storage				-- Not Done
+
+
+## Document Templates
+35. Create Template					-- Done
+36. Get Default Template				-- Done
+
+
+## Activity Logs
+37. Create Activity Log					-- Not Done
+38. List Activity Logs					-- Not Done
+39. Filter by Event Type				-- Not Done
+
+
+## Notifications
+40. Create Notification					-- Not Done
+41. Get Unread Notifications				-- Not Done
+42. Mark as Read					-- Not Done
+43. Mark All as Read					-- Not Done
+
+
+## User Roles
+44. Get User Role					-- Done
+45. Check Specific Role					-- Not Done
+46. Check Specific Role					-- Not Done
+
+
+## Team Members (HR/Viewer)
+47. Create Team Member					-- Not Done
+48. List Team Members					-- Not Done
+				
+
+## Audit Freeze
+49. Set Audit Freeze					-- Done
+50. Get Active Freeze					-- Done		
+51. Deactivate Freeze					-- Done
+
+
+## Exit Summaries
+52. Create Exit Summary					-- Done
+53. Get Exit Summary for Employee			-- Done
+			
+
+## Edge Functions
+54. Create Employee User				-- Done
+55. Reset Employee Password				-- Done
+56. Mark Password Changed				-- Done
+				
+
+## Real-time Subscriptions
+57. Subscribe to Notifications				-- Not Done
+58. Subscribe to Grant Updates				-- Not Done	
+		
+
+## Error Handling
+59. Standard Error Response Structure			-- Not Done
+
+
+
+	    
+
+
+
+
+
+ADMIN SIGNUP DATA
+
+{
+  "full_name" : "Ravi",
+  "user_email" : "ravi@cts.com", 
+  "user_pass" : "ravicts"
+}
+
+ADD COMPANY DATA
+{
+  "name": "Cognizant Technology Solutions",
+  "cin": "L72400TG1994PLC017354",
+  "pan_number": "AAACC1234G",
+  "gstin": "33AAACC1234G1Z1",
+  "address_line1": "5/535, Old Mahabalipuram Rd, Thoraipakkam",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "pincode": "600097",
+  "company_email": "corporate@cognizant.com",
+  "phone": "+91-44-42096000",
+  "share_price": 75.50,
+  "total_pool_shares": 500000000,
+  "is_active": true
+}
+
+
+
+
+{name,cin,pan_number,gstin,address_line1,city,state,pincode,company_email,phone,share_price,total_pool_shares}
+
+
+ADD EMPLOYEE BY ADMIN
+""
+{
+    "company_id" : "f57fc75f-9705-460f-8492-444c72ba590a",
+    "employee_name" : "Jhon",
+    "email" : "jhon@cts.com",
+    "employee_id" : "cts001",
+    "department" : "Engineering",
+    "position" : "Senior Developer",
+    "hire_date" : "2024-01-15",
+    "employment_type" : "Employee",
+    "pan" : "ABCDE1234F"
+}
+""
+
+Create ESOP Plan 
+
+""
+
+{company_id,plan_name,total_shares_reserved,shares_allocated,effective_date,expiry_date,plan_type,currency,vesting_start_reference,default_vesting_period_years,default_cliff_months,vesting_method,vesting_percentages,strike_price_type,default_strike_price,allow_strike_price_override,post_termination_exercise_days,unvested_lapse_on_termination,vested_lapse_after_window,acceleration_on_change_of_control,acceleration_on_termination_without_cause,eligible_participants}
+
+""
+
+LINEAR
+{
+  "company_id": "f57fc75f-9705-460f-8492-444c72ba590a",
+  "plan_name": "Employee Stock Option Plan 2026",
+  "total_shares_reserved": 100000,
+  "shares_allocated": 0,
+  "effective_date": "2026-01-01",
+  "expiry_date": "2036-01-01",
+  "plan_type": "ESOP",
+  "currency": "INR",
+  "vesting_start_reference": "grant_date",
+  "default_vesting_period_years": 4,
+  "default_vesting_frequency": "monthly",
+  "default_cliff_months": 12,
+  "vesting_method": "linear",
+  "vesting_percentages": null,
+  "strike_price_type": "fixed",
+  "default_strike_price": 150.50,
+  "allow_strike_price_override": false,
+  "post_termination_exercise_days": 90,
+  "unvested_lapse_on_termination": true,
+  "vested_lapse_after_window": true,
+  "acceleration_on_change_of_control": false,
+  "acceleration_on_termination_without_cause": false,
+  "eligible_participants": [
+    "Employee"
+  ]
+}
+""
+
+PERCENTAGE
+{
+  "company_id": "e3b85bc3-6023-4492-b470-0c3bef6289c7",
+  "plan_name": "Executive Performance ESOP 2026",
+  "total_shares_reserved": 50000,
+  "shares_allocated": 0,
+  "effective_date": "2026-03-01",
+  "expiry_date": "2031-03-01",
+  "plan_type": "ESOP",
+  "currency": "INR",
+  "vesting_start_reference": "grant_date",
+  "default_vesting_period_years": 4,
+  "default_vesting_frequency": "annually",
+  "default_cliff_months": 12,
+  "vesting_method": "percentage",
+  "vesting_percentages": [
+    { "year": 1, "percentage": 10 },
+    { "year": 2, "percentage": 20 },
+    { "year": 3, "percentage": 30 },
+    { "year": 4, "percentage": 40 }
+  ],
+  "strike_price_type": "fmv",
+  "default_strike_price": 150.50,
+  "default_strike_price": 0,
+  "allow_strike_price_override": true,
+  "post_termination_exercise_days": 180,
+  "unvested_lapse_on_termination": true,
+  "vested_lapse_after_window": false,
+  "acceleration_on_change_of_control": true,
+  "acceleration_on_termination_without_cause": true,
+  "eligible_participants": ["Employee"]
+}
+
+
+Grant Creation
+""
+{
+  "company_id": "4c047a37-c3a3-493d-aad9-101bb4559e1f",
+  "employee_id": "d3ba86d5-bc4b-4479-9e38-8a083ca60eb4",
+  "esop_plan_id": "33d8c16d-daeb-4bbe-b39e-068cc05000ff",
+  "grant_name": "Senior Dev Annual Grant 2026",
+  "grant_date": "2026-03-03",
+  "total_shares": 10000.00,
+  "exercise_price": 150.25,
+  "vesting_start_date": "2026-04-01",
+  "vesting_end_date": "2030-04-01",
+  "vesting_period_months": 48,
+  "cliff_months": 12,
+  "vesting_method": "linear",
+  "vesting_percentages": null,
+  "vested_shares": 0,
+  "exercised_shares": 0,
+  "lapsed_shares": 0,
+  "status": "active",
+  "notes": "Initial performance grant assigned with custom end date."
+}
+""
+
+Sample Exercise
+
+""
+{
+  "company_id": "e3b85bc3-6023-4492-b470-0c3bef6289c7",
+  "employee_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "grant_id": "77d12345-bcde-4fgh-89ij-klmno67890pq",
+  "exercise_date": "2026-03-04",
+  "shares_exercised": 1000, 
+  "exercise_price": 100.00,  from ESOP_Grants Table
+  "payment_method": "cash",
+  "tax_withheld": 5000.00,
+  "status": "pending",
+  "notes": "Exercising Q1 vested shares for home down payment."
+}
+""
+
+Need Exercise Data through req.body
+{
+
+  "grant_id" : "7041fd8e-d457-43da-9855-c127112683f5",
+  "shares_exercised" : 100,
+  "withheld" : 5000,
+  "notes" : "Need to purchase vested shares"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1. Companies Table
+This stores the primary organization details and the master share pool.
+
+2. Employees Table
+Links people to companies and tracks their professional status.
+
+3. ESOP Plans Table
+Contains the global rules for vesting and exercise windows.
+
+4. ESOP Grants Table
+The specific allotment assigned to an employee.
+
+5. Exercises & Requests
+Tracks the lifecycle of an employee converting options to equity.
+
+6. FMV Valuations & Activity Logs
+7. Supplementary Tables (Docs & Notifs)
+Would you like me to write the PostgreSQL triggers to automatically update the shares_allocated in esop_plans whenever a new grant is inserted?
