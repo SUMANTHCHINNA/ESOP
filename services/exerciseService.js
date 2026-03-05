@@ -1,4 +1,4 @@
-const { createExerciseRepository,getExerciseHistoryOfGrantRepository,getExercisesUponStatusRepository } = require('../repository/exerciseRepository')
+const { createExerciseRepository,getExerciseHistoryOfGrantRepository,getExercisesUponStatusRepository,approveOrRejectExerciseRepository } = require('../repository/exerciseRepository')
 const {validateFields} = require('../utils/validation')
 
 const createExerciseService = async (body, employeeId, companyId, exercise_price) => {
@@ -47,8 +47,28 @@ const getExercisesUponStatusService = async (status) => {
     }
 };
 
+const approveOrRejectExerciseService = async (exerciseId, action, adminUserId, rejectionReason) => {
+    const normalizedAction = action?.toLowerCase();
+    
+    // Logic check: 'approve' becomes 'approved', 'reject' becomes 'rejected' to match Enum
+    if (!normalizedAction || !['approve', 'reject'].includes(normalizedAction)) {
+        const error = new Error('Action must be "approve" or "reject"');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (normalizedAction === 'reject' && !rejectionReason) {
+        const error = new Error('Rejection reason is required for rejection');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return await approveOrRejectExerciseRepository(exerciseId, normalizedAction, adminUserId, rejectionReason);
+}
+
 module.exports = {
     createExerciseService,
     getExerciseHistoryOfGrantService,
-    getExercisesUponStatusService
+    getExercisesUponStatusService,
+    approveOrRejectExerciseService
 }

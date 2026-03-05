@@ -1,5 +1,5 @@
 const { getCompanyId } = require('../repository/usersRepository');
-const { createExerciseService, getExerciseHistoryOfGrantService,getExercisesUponStatusService } = require('../services/exerciseService')
+const { createExerciseService, getExerciseHistoryOfGrantService, getExercisesUponStatusService, approveOrRejectExerciseService } = require('../services/exerciseService')
 const { getEmployeeGrantDetailsRepository } = require('../repository/esopGrantsRepository')
 
 const createExerciseController = async (req, res) => {
@@ -59,7 +59,7 @@ const getExerciseHistroyOfGrantController = async (req, res) => {
 const getExercisesUponStatusController = async (req, res) => {
     try {
         // GET requests use req.query for ?status=value
-        const { status } = req.query; 
+        const { status } = req.query;
 
         const data = await getExercisesUponStatusService(status);
 
@@ -80,8 +80,33 @@ const getExercisesUponStatusController = async (req, res) => {
     }
 };
 
+const approveOrRejectExerciseController = async (req, res) => {
+    try {
+        const { action } = req.query; // 'approve' or 'reject'
+        const { rejection_reason } = req.body;
+        const exerciseId = req.params.id;
+        const adminUserId = req.user.id; 
+
+        const result = await approveOrRejectExerciseService(exerciseId, action, adminUserId, rejection_reason);
+        
+        return res.status(200).json({
+            success: true,
+            message: `Exercise request has been ${action}ed successfully.`,
+            data: result
+        });
+    } catch (err) {
+        console.error('Error In approveOrRejectExerciseController:', err.message);
+        const statusCode = err.statusCode || 500;
+        return res.status(statusCode).json({
+            success: false,
+            message: err.message || 'Failed to process Exercise request'
+        });
+    }
+}
+
 module.exports = {
     createExerciseController,
     getExerciseHistroyOfGrantController,
-    getExercisesUponStatusController
+    getExercisesUponStatusController,
+    approveOrRejectExerciseController
 }

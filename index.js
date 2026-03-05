@@ -7,7 +7,7 @@ const companyRoutes = require('./routes/companyRouter');
 const esopPlansRouter = require('./routes/esopPlansRouter');
 const esopGrantsRouter = require('./routes/esopGrantsRouter');
 const exerciseRouter = require('./routes/exerciseRouter')
-const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums,createEsopGrantsTable,createExercisesTable } = require('./modals/tables');
+const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums,createEsopGrantsTable,createExercisesTable, createFvmValuationsTable } = require('./modals/tables');
 
 dotenv.config();
 
@@ -36,6 +36,7 @@ app.listen(port, async () => {
     await createEnums();
     await createEsopGrantsTable();
     await createExercisesTable();
+    await createFvmValuationsTable();
     console.log('Users table creation initiated');
   } catch (error) {
     console.error('Error creating tables:', error);

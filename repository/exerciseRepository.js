@@ -6,7 +6,7 @@ const pool = new Pool({
 });
 
 const createExerciseRepository = async (body, employeeId, companyId, exercise_price) => {
-    console.log(body,employeeId,companyId,exercise_price)
+    console.log(body, employeeId, companyId, exercise_price)
     const sql = `
         INSERT INTO exercises (
             company_id, 
@@ -30,7 +30,7 @@ const createExerciseRepository = async (body, employeeId, companyId, exercise_pr
         body.shares_exercised,
         exercise_price,
         body.payment_method || 'cashless',
-        body.withheld || 0, 
+        body.withheld || 0,
         body.notes || null
     ];
 
@@ -39,7 +39,7 @@ const createExerciseRepository = async (body, employeeId, companyId, exercise_pr
         return result.rows[0];
     } catch (dbError) {
         console.error('Database Error in createExerciseRepository:', dbError.message);
-        throw dbError; 
+        throw dbError;
     }
 };
 
@@ -52,10 +52,10 @@ const getExerciseHistoryOfGrantRepository = async (grantId) => {
     `;
     try {
         const result = await pool.query(sql, [grantId]);
-        return result.rows; 
+        return result.rows;
     } catch (dbError) {
         console.error('Database Error in getExerciseHistoryRepository:', dbError.message);
-        throw dbError; 
+        throw dbError;
     }
 };
 
@@ -77,8 +77,79 @@ const getExercisesUponStatusRepository = async (status) => {
     }
 };
 
+const approveOrRejectExerciseRepository = async (exerciseId, action, adminUserId, rejectionReason) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Fetch current record and lock row
+        const findSql = `SELECT grant_id, shares_exercised, status FROM exercises WHERE id = $1 FOR UPDATE`;
+        const exerciseResult = await client.query(findSql, [exerciseId]);
+
+        if (exerciseResult.rows.length === 0) {
+            throw new Error('Exercise record not found');
+        }
+
+        const { grant_id, shares_exercised, status } = exerciseResult.rows[0];
+
+        if (status !== 'submitted') {
+            throw new Error(`Exercise is already ${status}`);
+        }
+
+        // Map 'approve' to 'approved' and 'reject' to 'rejected'
+        const finalStatusValue = action === 'approve' ? 'approved' : 'rejected';
+
+        // 2. Update Exercises Table
+        const updateExerciseSql = `
+            UPDATE exercises 
+            SET 
+                status = $1::exercise_status_enum, 
+                rejection_reason = $2, 
+                reviewed_by = $3, 
+                reviewed_at = NOW(),
+                updated_at = NOW() 
+            WHERE id = $4 
+            RETURNING *`;
+        
+        const updatedExercise = await client.query(updateExerciseSql, [
+            finalStatusValue, 
+            action === 'reject' ? rejectionReason : null, 
+            adminUserId, 
+            exerciseId
+        ]);
+
+        // 3. Update Esop_Grant Table (The Fixed Query)
+        if (action === 'approve') {
+            const updateGrantSql = `
+                UPDATE esop_grants 
+                SET 
+                    exercised_shares = exercised_shares + $1,
+                    updated_at = NOW(),
+                    status = (CASE 
+                        WHEN (exercised_shares + $1 + lapsed_shares) >= total_shares 
+                        THEN 'fully_exercised'
+                        ELSE status::text 
+                    END)::grant_status_enum
+                WHERE id = $2`;
+            
+            await client.query(updateGrantSql, [shares_exercised, grant_id]);
+        }
+
+        await client.query('COMMIT');
+        return updatedExercise.rows[0];
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Database Transaction Error:', err.message);
+        throw err;
+    } finally {
+        client.release();
+    }
+}
+
 module.exports = {
     createExerciseRepository,
     getExerciseHistoryOfGrantRepository,
-    getExercisesUponStatusRepository
+    getExercisesUponStatusRepository,
+    approveOrRejectExerciseRepository
 }

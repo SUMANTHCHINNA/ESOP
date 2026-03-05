@@ -14,18 +14,29 @@ const createEnums = async () => {
     const query = `
         DO $$ 
         BEGIN 
+            -- Grant Status
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'grant_status_enum') THEN
                 CREATE TYPE grant_status_enum AS ENUM ('active', 'lapsed', 'cancelled', 'fully_exercised');
             END IF;
 
+            -- Exercise Status (Updated with 'submitted')
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'exercise_status_enum') THEN
-                CREATE TYPE exercise_status_enum AS ENUM ('pending', 'approved', 'rejected', 'completed', 'cancelled');
+                CREATE TYPE exercise_status_enum AS ENUM ('submitted', 'pending', 'approved', 'rejected', 'completed', 'cancelled');
+            ELSE
+                -- Safety: Add 'submitted' if the enum exists but lacks it
+                BEGIN
+                    ALTER TYPE exercise_status_enum ADD VALUE 'submitted';
+                EXCEPTION
+                    WHEN duplicate_object THEN null; -- Value already exists
+                END;
             END IF;
 
+            -- Payment Method
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_method_enum') THEN
                 CREATE TYPE payment_method_enum AS ENUM ('cash', 'cashless', 'check', 'wire_transfer', 'other');
             END IF;
 
+            -- Employment Type
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'employment_type_enum') THEN
                 CREATE TYPE employment_type_enum AS ENUM ('ADMIN', 'EMPLOYEE', 'EMPLOYEER');
             END IF;
@@ -35,7 +46,7 @@ const createEnums = async () => {
         await pool.query(query);
         console.log('All ESOP Enums initialized successfully');
     } catch (err) {
-        console.error('Error creating Enums:', err);
+        console.error('Error creating Enums:', err.message);
     }
 };
 
@@ -185,15 +196,27 @@ const createExercisesTable = async () => {
             company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
             employee_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             grant_id UUID NOT NULL REFERENCES esop_grants(id) ON DELETE CASCADE,
-            exercise_date DATE NOT NULL DEFAULT CURRENT_DATE,
-            shares_exercised NUMERIC(15, 2) NOT NULL CHECK (shares_exercised > 0),
+            
+            -- Transaction Data
+            shares_exercised NUMERIC(15, 2) NOT NULL, 
+            exercise_date DATE NOT NULL DEFAULT CURRENT_DATE, 
             exercise_price NUMERIC(15, 2) NOT NULL,
+            
+            -- Status & Workflow (using the Enum we created)
+            status exercise_status_enum DEFAULT 'submitted', 
+            
+            -- Payment & Compliance
             payment_method payment_method_enum DEFAULT 'cashless',
             tax_withheld NUMERIC(15, 2) DEFAULT 0.00,
-            status exercise_status_enum DEFAULT 'pending',
+            
+            -- Admin Review Fields
             notes TEXT,
-            created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW()
+            rejection_reason TEXT,
+            reviewed_by UUID REFERENCES users(id),
+            reviewed_at TIMESTAMP WITH TIME ZONE,
+            
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
         CREATE INDEX IF NOT EXISTS idx_exercise_grant ON exercises(grant_id);
         CREATE INDEX IF NOT EXISTS idx_exercise_employee ON exercises(employee_id);
@@ -207,6 +230,47 @@ const createExercisesTable = async () => {
     }
 };
 
+const createFvmValuationsTable = async () =>{
+    const query = `
+                CREATE TABLE IF NOT EXISTS fmv_valuations (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+            
+            -- Price Data
+            share_price NUMERIC(15, 2) NOT NULL CHECK (share_price >= 0),
+            currency VARCHAR(3) DEFAULT 'INR', 
+            
+            -- Validity Period
+            valuation_date DATE NOT NULL,
+            effective_from DATE NOT NULL,
+            effective_to DATE, -- NULL means currently active
+            is_active BOOLEAN DEFAULT TRUE,
+
+            -- Compliance Audit Trail
+            valuation_firm VARCHAR(255),
+            valuation_method VARCHAR(100), -- DCF, Market Multiples, Net Asset, etc.
+            approved_by VARCHAR(255),
+            report_url TEXT,
+            
+            notes TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+
+        -- Create the index only if it doesn't already exist
+        CREATE INDEX IF NOT EXISTS idx_fmv_active 
+        ON fmv_valuations(company_id) 
+        WHERE is_active = TRUE;
+    `;
+    try{
+        await pool.query(query);
+        console.log('Fvm_Valuations table initialized successfully');
+    }
+    catch(err){
+         console.error('Error creating Exercises table:', err);
+    }
+}
+
 module.exports = {
     pool,
     createEnums,
@@ -214,5 +278,6 @@ module.exports = {
     createUsersTable,
     createEsopPlanTable,
     createEsopGrantsTable,
-    createExercisesTable
+    createExercisesTable,
+    createFvmValuationsTable
 };
