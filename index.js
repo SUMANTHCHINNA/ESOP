@@ -8,7 +8,9 @@ const esopPlansRouter = require('./routes/esopPlansRouter');
 const esopGrantsRouter = require('./routes/esopGrantsRouter');
 const exerciseRouter = require('./routes/exerciseRouter');
 const fmvValuationRouter = require('./routes/fmvValiadtionRouter')
-const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums,createEsopGrantsTable,createExercisesTable, createFvmValuationsTable } = require('./modals/tables');
+const documentTemplateRouter = require('./routes/documentTemplateRouter')
+const auditRouter = require('./routes/auditRouter')
+const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums,createEsopGrantsTable,createExercisesTable, createFvmValuationsTable,createDocumentTemplateTable,auditFreezeTable } = require('./modals/tables');
 
 dotenv.config();
 
@@ -22,6 +24,8 @@ app.use('/api/esopPlans', esopPlansRouter);
 app.use('/api/esopGrants', esopGrantsRouter);
 app.use('/api/exercises', exerciseRouter);
 app.use('/api/fmvValuation',fmvValuationRouter);
+app.use('/api/documentTemplate',documentTemplateRouter);
+app.use('/api/audit',auditRouter);
 
 
 
@@ -39,6 +43,8 @@ app.listen(port, async () => {
     await createEsopGrantsTable();
     await createExercisesTable();
     await createFvmValuationsTable();
+    await createDocumentTemplateTable();
+    await auditFreezeTable();
     console.log('Users table creation initiated');
   } catch (error) {
     console.error('Error creating tables:', error);

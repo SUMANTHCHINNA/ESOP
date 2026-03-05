@@ -60,10 +60,87 @@ const getCompanyId = async (email) => {
     }
 }
 
+const getUserRoleRepository = async (userId) => {
+    try {
+        // Querying direct column from users table
+        const sql = `SELECT employment_type FROM users WHERE id = $1 LIMIT 1`;
+
+        const result = await pool.query(sql, [userId]);
+
+        // Return the string value if found, otherwise null
+        return result.rows[0] ? result.rows[0].employment_type : null;
+    } catch (DbError) {
+        console.error('Database Error in getUserRoleRepository:', DbError.message);
+        throw DbError; // Strictly throw to trigger the catch blocks above
+    }
+};
+
+const updateUserDetailsRepository = async (userId, data) => {
+    const keys = Object.keys(data);
+    if (keys.length === 0) return null;
+
+    // Dynamically build the SET part of the query: column1=$1, column2=$2...
+    const setClause = keys
+        .map((key, index) => `"${key}" = $${index + 1}`)
+        .join(', ');
+
+    const values = Object.values(data);
+    values.push(userId); // The last placeholder is for the WHERE clause
+
+    const sql = `
+        UPDATE users 
+        SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $${values.length}
+        RETURNING *`;
+
+    try {
+        const result = await pool.query(sql, values);
+
+        if (result.rows.length === 0) {
+            const error = new Error('User not found');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return result.rows[0];
+    } catch (DbError) {
+        console.error('Database Error in updateUserDetailsRepository:', DbError.message);
+        throw DbError; // Throwing ensure the service/controller catch it
+    }
+};
+
+
+const updatePasswordRepository = async (userId, hashedPassword) => {
+    try {
+        const sql = `
+            UPDATE users 
+            SET user_pass = $1, 
+                updated_at = CURRENT_TIMESTAMP 
+            WHERE id = $2
+            RETURNING id`;
+
+        const values = [hashedPassword, userId];
+        const result = await pool.query(sql, values);
+
+        if (result.rows.length === 0) {
+            const error = new Error('User not found.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return result.rows[0];
+    } catch (DbError) {
+        console.error('Database Error in updatePasswordRepository:', DbError.message);
+        throw DbError;
+    }
+};
 
 module.exports = {
     getAllEmployeesOfAnCompany,
     checkAdminCompanyDetails,
     terminateUserById,
-    getCompanyId
+    getCompanyId,
+    getUserRoleRepository,
+    updateUserDetailsRepository,
+    updatePasswordRepository
 }

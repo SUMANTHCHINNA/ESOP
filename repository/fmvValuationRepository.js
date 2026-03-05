@@ -62,7 +62,7 @@ const createValuationRepository = async (data) => {
 const getActiveValuationRepository = async (companyId) => {
     const sql = `
         SELECT * FROM fmv_valuations 
-        WHERE company_id = $1 AND is_active = TRUE 
+        WHERE company_id = $1 AND is_active = TRUE AND effective_to IS NULL
         LIMIT 1`;
     const result = await pool.query(sql, [companyId]);
     return result.rows[0];

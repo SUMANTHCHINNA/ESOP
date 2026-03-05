@@ -230,7 +230,7 @@ const createExercisesTable = async () => {
     }
 };
 
-const createFvmValuationsTable = async () =>{
+const createFvmValuationsTable = async () => {
     const query = `
                 CREATE TABLE IF NOT EXISTS fmv_valuations (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -262,12 +262,73 @@ const createFvmValuationsTable = async () =>{
         ON fmv_valuations(company_id) 
         WHERE is_active = TRUE;
     `;
-    try{
+    try {
         await pool.query(query);
         console.log('Fvm_Valuations table initialized successfully');
     }
-    catch(err){
-         console.error('Error creating Exercises table:', err);
+    catch (err) {
+        console.error('Error creating Exercises table:', err);
+    }
+}
+
+const createDocumentTemplateTable = async () => {
+    const query = `
+                CREATE TABLE IF NOT EXISTS document_templates (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+            
+            -- Template Identity
+            template_name VARCHAR(255) NOT NULL, -- e.g., 'Grant Letter', 'Exercise Agreement'
+            template_type VARCHAR(50) NOT NULL, -- e.g., 'OFFER_LETTER', 'GRANT_CERTIFICATE'
+            version VARCHAR(20) DEFAULT '1.0.0',
+            
+            -- Content
+            content TEXT NOT NULL, -- The template body with placeholders
+            placeholders JSONB, -- List of expected keys like ["name", "shares", "price"]
+            
+            -- Metadata
+            is_default BOOLEAN DEFAULT TRUE,
+            created_by UUID REFERENCES users(id), -- Admin who created it
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+
+        -- Index for fast lookup by type
+        CREATE INDEX IF NOT EXISTS idx_template_lookup ON document_templates(company_id, template_type) WHERE is_default = TRUE;
+    `;
+    try {
+        await pool.query(query);
+        console.log('DocumentTemplate table initialized successfully');
+    }
+    catch (err) {
+        console.error('Error  createDocumentTemplateTable table:', err);
+    }
+}
+
+const auditFreezeTable = async () => {
+    const query = `
+        CREATE TABLE IF NOT EXISTS audit_freeze (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+            freeze_date DATE NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE,
+            frozen_by UUID NOT NULL REFERENCES users(id),
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Use IF NOT EXISTS here to prevent errors on server restart
+        CREATE INDEX IF NOT EXISTS idx_audit_freeze_company_active 
+        ON audit_freeze (company_id) 
+        WHERE is_active = TRUE;
+    `;
+    try {
+        await pool.query(query);
+        console.log('Audit Freeze table and index initialized successfully');
+    }
+    catch (err) {
+        console.error('Error initializing Audit Freeze table:', err.message);
     }
 }
 
@@ -279,5 +340,7 @@ module.exports = {
     createEsopPlanTable,
     createEsopGrantsTable,
     createExercisesTable,
-    createFvmValuationsTable
+    createFvmValuationsTable,
+    createDocumentTemplateTable,
+    auditFreezeTable
 };

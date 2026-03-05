@@ -1,5 +1,5 @@
-const {checkUserAlreadyExistInDBAndGetData} = require('../repository/authRepository') 
-const {checkAdminCompanyDetails,getAllEmployeesOfAnCompany,terminateUserById} = require('../repository/usersRepository')
+const { checkUserAlreadyExistInDBAndGetData } = require('../repository/authRepository')
+const { checkAdminCompanyDetails, getAllEmployeesOfAnCompany, terminateUserById, getUserRoleRepository,updateUserDetailsRepository,updatePasswordRepository } = require('../repository/usersRepository')
 
 const getUserDetailsService = async (userEmail) => {
     // 1. Validation (Optional but good practice)
@@ -34,7 +34,7 @@ const getUserDetailsService = async (userEmail) => {
 const getCompanyAndEmployeesService = async (adminId) => {
     // 1. Fetch Company details where this user is the Admin
     const companyData = await checkAdminCompanyDetails(adminId);
-    
+
     if (!companyData || companyData.length === 0) {
         const error = new Error('No company found for this admin');
         error.statusCode = 404;
@@ -74,9 +74,57 @@ const terminateUserService = async (userId) => {
     return result.rows[0];
 };
 
+const getUserRoleService = async (userId) => {
+    try {
+        const role = await getUserRoleRepository(userId);
+        
+        if (!role) {
+            const error = new Error('User employment type not found');
+            error.statusCode = 404;
+            throw error;
+        }
+        
+        return role;
+    } catch (err) {
+        // Must throw so the controller knows it failed
+        throw err;
+    }
+};
+
+const updateUserDetailsService = async (userId, body) => {
+    // Prevent empty updates
+    if (!body || Object.keys(body).length === 0) {
+        const error = new Error('No fields provided for update');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    try {
+        return await updateUserDetailsRepository(userId, body);
+    } catch (err) {
+        throw err;
+    }
+};
+
+const updatePasswordService = async (userId, newPassword) => {
+    try {
+        // 1. Hash the new password (Salt rounds = 10)
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        // 2. Pass the hashed password to the repository
+        return await updatePasswordRepository(userId, hashedPassword);
+    } catch (err) {
+        throw err;
+    }
+};
+
 
 module.exports = {
     getUserDetailsService,
     getCompanyAndEmployeesService,
-    terminateUserService
+    terminateUserService,
+    getUserRoleService,
+    updateUserDetailsService,
+    updatePasswordService
 }
