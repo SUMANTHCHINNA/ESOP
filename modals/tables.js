@@ -332,6 +332,50 @@ const auditFreezeTable = async () => {
     }
 }
 
+const createExitSummariesTable = async () => {
+    const query = `
+        CREATE TABLE IF NOT EXISTS esop_exit_summaries (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+            employee_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            
+            -- Snapshot Employee Data
+            employee_name VARCHAR(100) NOT NULL,
+            employee_code VARCHAR(50),
+            department VARCHAR(100),
+            position VARCHAR(100),
+            hire_date DATE,
+            termination_date DATE NOT NULL,
+            termination_type VARCHAR(50), -- resignation, termination, etc.
+            
+            -- Stock Option Summary (Snapshot)
+            grant_details JSONB NOT NULL, -- Array of grant objects
+            total_options_granted DECIMAL(15, 2) DEFAULT 0,
+            total_options_vested DECIMAL(15, 2) DEFAULT 0,
+            total_options_exercised DECIMAL(15, 2) DEFAULT 0,
+            total_options_unvested DECIMAL(15, 2) DEFAULT 0,
+            total_options_lapsed DECIMAL(15, 2) DEFAULT 0,
+            total_options_exercisable DECIMAL(15, 2) DEFAULT 0,
+            
+            -- Exercise Rules
+            post_termination_exercise_days INTEGER DEFAULT 90,
+            exercise_window_end_date DATE,
+            
+            generated_by UUID REFERENCES users(id),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_exit_summary_employee ON esop_exit_summaries(employee_id);
+        CREATE INDEX IF NOT EXISTS idx_exit_summary_company ON esop_exit_summaries(company_id);
+    `;
+    try {
+        await pool.query(query);
+        console.log('ESOP Exit Summaries table initialized successfully');
+    } catch (err) {
+        console.error('Error creating Exit Summaries table:', err.message);
+    }
+};
+
 module.exports = {
     pool,
     createEnums,
@@ -342,5 +386,6 @@ module.exports = {
     createExercisesTable,
     createFvmValuationsTable,
     createDocumentTemplateTable,
-    auditFreezeTable
+    auditFreezeTable,
+    createExitSummariesTable
 };

@@ -10,7 +10,8 @@ const exerciseRouter = require('./routes/exerciseRouter');
 const fmvValuationRouter = require('./routes/fmvValiadtionRouter')
 const documentTemplateRouter = require('./routes/documentTemplateRouter')
 const auditRouter = require('./routes/auditRouter')
-const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums,createEsopGrantsTable,createExercisesTable, createFvmValuationsTable,createDocumentTemplateTable,auditFreezeTable } = require('./modals/tables');
+const exitSummary = require('./routes/exitSummaryRouter')
+const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums,createEsopGrantsTable,createExercisesTable, createFvmValuationsTable,createDocumentTemplateTable,auditFreezeTable,createExitSummariesTable } = require('./modals/tables');
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use('/api/exercises', exerciseRouter);
 app.use('/api/fmvValuation',fmvValuationRouter);
 app.use('/api/documentTemplate',documentTemplateRouter);
 app.use('/api/audit',auditRouter);
+app.use('/api/exitSummary',exitSummary);
 
 
 
@@ -45,6 +47,7 @@ app.listen(port, async () => {
     await createFvmValuationsTable();
     await createDocumentTemplateTable();
     await auditFreezeTable();
+    await createExitSummariesTable();
     console.log('Users table creation initiated');
   } catch (error) {
     console.error('Error creating tables:', error);
