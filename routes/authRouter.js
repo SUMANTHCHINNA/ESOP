@@ -7,7 +7,7 @@ const auth = require('../Middlewares/auth');
 // Configure Multer to store files temporarily in 'uploads/' folder
 const upload = multer({ dest: 'uploads/' ,limits: { fileSize: 10 * 1024 * 1024 }});
 
-router.post('/createUser',createUserController);
+router.post('/register',createUserController);
 router.post('/login', userLoginController); 
 router.post('/logout' , logoutController);
 

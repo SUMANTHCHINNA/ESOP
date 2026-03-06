@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const dotenv = require('dotenv');
+const cors = require('cors');
 const authRoutes = require('./routes/authRouter');
 const userRoutes = require('./routes/userRouter');
 const companyRoutes = require('./routes/companyRouter');
@@ -14,6 +15,15 @@ const exitSummary = require('./routes/exitSummaryRouter')
 const { createUsersTable,createCompaniesTable,createEsopPlanTable,createEnums,createEsopGrantsTable,createExercisesTable, createFvmValuationsTable,createDocumentTemplateTable,auditFreezeTable,createExitSummariesTable } = require('./modals/tables');
 
 dotenv.config();
+
+
+const corsOptions = {
+  origin: 'https://urban-giggle-g9rj5xgj9qv29695-8080.app.github.dev',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  // allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
