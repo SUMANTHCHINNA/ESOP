@@ -38,7 +38,7 @@ const createEnums = async () => {
 
             -- Employment Type
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'employment_type_enum') THEN
-                CREATE TYPE employment_type_enum AS ENUM ('ADMIN', 'EMPLOYEE', 'EMPLOYEER');
+                CREATE TYPE employment_type_enum AS ENUM ('admin', 'employee', 'employer');
             END IF;
         END $$;
     `;
@@ -95,7 +95,7 @@ const createUsersTable = async () => {
             pan VARCHAR(10) UNIQUE,
             hire_date DATE,
             termination_date DATE,
-            employment_type employment_type_enum DEFAULT 'ADMIN',
+            employment_type employment_type_enum DEFAULT 'employer',
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

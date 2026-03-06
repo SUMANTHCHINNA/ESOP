@@ -75,7 +75,7 @@ const terminateUserByIdController = async (req, res) => {
 
 const getUserRoleController = async (req, res) => {
     try {
-        const userId = req.userId || (req.user && req.user.id);
+        const userId = req.params.id;
 
         if (!userId) {
             return res.status(401).json({ success: false, message: "Unauthorized: No User ID" });

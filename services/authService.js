@@ -4,10 +4,10 @@ const { validateFields } = require('../utils/validation')
 const { generateToken } = require('../utils/tokenServices')
 
 const createUserService = async (body) => {
-    const { full_name, user_email, user_pass } = body;
+    const { fullName, email, password } = body;
 
     // 1. Validation
-    const requiredFields = ['full_name', 'user_email', 'user_pass'];
+    const requiredFields = ['fullName', 'email', 'password'];
     const validationError = validateFields(requiredFields, body);
 
     if (validationError) {
@@ -17,22 +17,22 @@ const createUserService = async (body) => {
     }
 
     // 2. Logic: Hash Password
-    const hashedPassword = await bcrypt.hash(user_pass, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // 3. Repository Call
-    const result = await createUser(full_name, user_email, hashedPassword);
+    const result = await createUser(fullName, email, hashedPassword);
     const newUser = result.rows[0];
 
     // 4. Generate JWT
-    const token = await generateToken(newUser.id, newUser.user_email);
+    const token = await generateToken(newUser.id, newUser.email);
     return { newUser, token };
 };
 
 const userLoginService = async (body) => {
-    const { user_email, user_pass } = body;
+    const { email, password } = body;
 
     // 1. Validation using global helper
-    const requiredFields = ['user_email', 'user_pass'];
+    const requiredFields = ['email', 'password'];
     const validationError = validateFields(requiredFields, body);
 
     if (validationError) {
@@ -42,7 +42,7 @@ const userLoginService = async (body) => {
     }
 
     // 2. Repository check
-    const users = await checkUserAlreadyExistInDBAndGetData(user_email);
+    const users = await checkUserAlreadyExistInDBAndGetData(email);
     if (users.length === 0) {
         const error = new Error('Invalid email or password');
         error.statusCode = 401;
@@ -52,7 +52,7 @@ const userLoginService = async (body) => {
     const user = users[0];
 
     // 3. Password Verification
-    const isPasswordValid = await bcrypt.compare(user_pass, user.user_pass);
+    const isPasswordValid = await bcrypt.compare(password, user.user_pass);
     if (!isPasswordValid) {
         const error = new Error('Invalid email or password');
         error.statusCode = 401;
@@ -63,7 +63,7 @@ const userLoginService = async (body) => {
     const token = await generateToken(user.id, user.user_email);
 
     return {
-        user: { id: user.id, full_name: user.full_name, user_email: user.user_email },
+        user: { id: user.id, full_name: user.full_name, user_email: user.user_email, role:user.employment_type },
         token
     };
 };
