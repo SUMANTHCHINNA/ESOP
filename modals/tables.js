@@ -38,7 +38,7 @@ const createEnums = async () => {
 
             -- Employment Type
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'employment_type_enum') THEN
-                CREATE TYPE employment_type_enum AS ENUM ('admin', 'employee', 'employer');
+                CREATE TYPE employment_type_enum AS ENUM ('admin', 'employee', 'employer','viewer','hr');
             END IF;
         END $$;
     `;
