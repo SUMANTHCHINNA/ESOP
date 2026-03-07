@@ -97,6 +97,7 @@ const createUsersTable = async () => {
             termination_date DATE,
             employment_type employment_type_enum DEFAULT 'employer',
             is_active BOOLEAN DEFAULT TRUE,
+            password_changed BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );

@@ -1,5 +1,5 @@
 const { checkUserAlreadyExistInDBAndGetData } = require('../repository/authRepository')
-const { checkAdminCompanyDetails, getAllEmployeesOfAnCompany, terminateUserById, getUserRoleRepository,updateUserDetailsRepository,updatePasswordRepository } = require('../repository/usersRepository')
+const { checkAdminCompanyDetails, getAllEmployeesOfAnCompany, terminateUserById, getUserRoleRepository,updateUserDetailsRepository,updatePasswordRepository,IspasswordChangedRepository } = require('../repository/usersRepository')
 
 const getUserDetailsService = async (userEmail) => {
     // 1. Validation (Optional but good practice)
@@ -119,6 +119,16 @@ const updatePasswordService = async (userId, newPassword) => {
     }
 };
 
+const IspasswordChangedService = async (userId) => {
+    try {
+        // Capture and return the data from the repository
+        const data = await IspasswordChangedRepository(userId);
+        return data;
+    } catch (err) {
+        throw err;
+    }
+};
+
 
 module.exports = {
     getUserDetailsService,
@@ -126,5 +136,6 @@ module.exports = {
     terminateUserService,
     getUserRoleService,
     updateUserDetailsService,
-    updatePasswordService
+    updatePasswordService,
+    IspasswordChangedService
 }

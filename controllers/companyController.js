@@ -32,7 +32,7 @@ const createCompanyController = async (req, res) => {
 const getCompanyController = async (req, res) => {
     try {
         // Extract ID from Auth Middleware
-        const userId = req.user.id;
+        const userId = req.params.id;
 
         // Call the Service
         const company = await getCompanyService(userId);

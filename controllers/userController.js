@@ -1,4 +1,4 @@
-const { getUserDetailsService, getCompanyAndEmployeesService, terminateUserService,getUserRoleService,updateUserDetailsService,updatePasswordService } = require('../services/userService')
+const { getUserDetailsService, getCompanyAndEmployeesService, terminateUserService,getUserRoleService,updateUserDetailsService,updatePasswordService,IspasswordChangedService } = require('../services/userService')
 
 const getUserDetailsController = async (req, res) => {
     try {
@@ -126,7 +126,7 @@ const updateUserDetailsController = async (req, res) => {
 const updatePasswordController = async (req, res) => {
     try {
         // userId should come from your auth middleware (req.user or req.userId)
-        const userId = req.userId || (req.user && req.user.id);
+        const userId = req.params.id;
         const { newPassword } = req.body;
 
         if (!newPassword) {
@@ -148,11 +148,33 @@ const updatePasswordController = async (req, res) => {
     }
 };
 
+const IspasswordChangedController = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        
+        // Capture the returned object { password_changed: boolean }
+        const result = await IspasswordChangedService(userId);
+        
+        return res.status(200).json({
+            success: true,
+            message: "Password status fetched successfully.",
+            password_changed: result.password_changed 
+        });
+    } catch (err) {
+        console.error('Error in IspasswordChangedController:', err.message);
+        return res.status(err.statusCode || 500).json({ 
+            success: false, 
+            error: err.message 
+        });
+    }
+};
+
 module.exports = {
     getUserDetailsController,
     getUserDetailsOfAnCompanyController,
     terminateUserByIdController,
     getUserRoleController,
     updateUserDetailsController,
-    updatePasswordController
+    updatePasswordController,
+    IspasswordChangedController
 };

@@ -115,7 +115,8 @@ const updatePasswordRepository = async (userId, hashedPassword) => {
         const sql = `
             UPDATE users 
             SET user_pass = $1, 
-                updated_at = CURRENT_TIMESTAMP 
+                updated_at = CURRENT_TIMESTAMP,
+                password_changed = TRUE 
             WHERE id = $2
             RETURNING id`;
 
@@ -135,6 +136,26 @@ const updatePasswordRepository = async (userId, hashedPassword) => {
     }
 };
 
+const IspasswordChangedRepository = async (userId) => {
+    const sql = `SELECT password_changed FROM users WHERE id = $1`;
+    try {
+        const values = [userId];
+        const result = await pool.query(sql, values);
+        
+        if (result.rows.length === 0) {
+            const error = new Error('User not found.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        // Return the row containing the boolean
+        return result.rows[0]; 
+    } catch (DbError) {
+        console.error('Database Error in IspasswordChangedRepository:', DbError.message);
+        throw DbError;
+    }
+};
+
 module.exports = {
     getAllEmployeesOfAnCompany,
     checkAdminCompanyDetails,
@@ -142,5 +163,6 @@ module.exports = {
     getCompanyId,
     getUserRoleRepository,
     updateUserDetailsRepository,
-    updatePasswordRepository
+    updatePasswordRepository,
+    IspasswordChangedRepository
 }
