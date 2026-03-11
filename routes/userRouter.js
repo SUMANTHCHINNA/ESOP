@@ -14,10 +14,11 @@ const {
 router.get("/getUserRole/:id", getUserRoleController);
 router.get("/IspasswordChanged/:id", IspasswordChangedController);
 router.get("/getUserDetails/:id", getUserDetailsController);
+router.get("/listAllEmployees/:id", getUserDetailsOfAnCompanyController);
+
 
 router.use(middleware);
 
-router.get("/listAllEmployees", getUserDetailsOfAnCompanyController);
 router.patch("/terminateUserById/:id", terminateUserByIdController); // New route for terminating an employee by admin
 router.patch("/updateUserDetails/:id", updateUserDetailsController);
 router.patch("/updatePassword/:id", updatePasswordController);

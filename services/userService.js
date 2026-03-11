@@ -38,6 +38,8 @@ const getUserDetailsService = async (userId) => {
     user_email: user.user_email,
     company_id: user.company_id,
     employment_type: user.employment_type,
+    status: user.status,
+    termination_date: user.termination_date,
   };
 };
 

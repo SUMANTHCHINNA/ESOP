@@ -25,6 +25,8 @@ const getUserDetailsController = async (req, res) => {
         full_name: userDetails.full_name,
         company_id: userDetails.company_id,
         employment_type: userDetails.employment_type,
+        status: userDetails.status,
+        termination_date: userDetails.termination_date,
       },
     });
   } catch (err) {
@@ -40,7 +42,7 @@ const getUserDetailsController = async (req, res) => {
 const getUserDetailsOfAnCompanyController = async (req, res) => {
   try {
     // adminId is extracted from the auth middleware (JWT)
-    const adminId = req.user.id;
+    const adminId = req.params.id;
 
     // Call the service to get both company and employee data
     const { company, employees } = await getCompanyAndEmployeesService(adminId);
