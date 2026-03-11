@@ -1,131 +1,130 @@
-const { createUserService, userLoginService, createUserByAdminService, createBulkUsersByAdminService } = require('../services/authService')
-const { parseFileToJson } = require('../utils/fileParser');
-const dotenv = require('dotenv')
+const {
+  createUserService,
+  userLoginService,
+  createUserByAdminService,
+  createBulkUsersByAdminService,
+} = require("../services/authService");
+const { parseFileToJson } = require("../utils/fileParser");
+const dotenv = require("dotenv");
 dotenv.config();
 
 const createUserController = async (req, res) => {
-    try {
-        // Call service with just the data it needs
-        const { newUser, token } = await createUserService(req.body);
+  try {
+    // Call service with just the data it needs
+    const { newUser, token } = await createUserService(req.body);
 
-        // Set Cookie
-        res.cookie('auth_token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production'
-        });
+    // Set Cookie
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    });
 
-        // Send Success Response
-        return res.status(201).json({
-            message: 'User registered successfully',
-            user: newUser,
-            session: { access_token : token }
-        });
+    // Send Success Response
+    return res.status(201).json({
+      message: "User registered successfully",
+      user: newUser,
+      session: { access_token: token },
+    });
+  } catch (err) {
+    console.error("Error In CreateUserController:", err.message);
 
-    } catch (err) {
-        console.error('Error In CreateUserController:', err.message);
+    // Use the status code from the error, or default to 500
+    const statusCode = err.statusCode || 500;
 
-        // Use the status code from the error, or default to 500
-        const statusCode = err.statusCode || 500;
-
-        // Handle Specific DB Errors (e.g., Unique Constraint)
-        if (err.code === '23505') {
-            return res.status(409).json({ message: 'Email already exists' });
-        }
-
-        return res.status(statusCode).json({
-            message: err.message || 'Internal server error'
-        });
+    // Handle Specific DB Errors (e.g., Unique Constraint)
+    if (err.code === "23505") {
+      return res.status(409).json({ message: "Email already exists" });
     }
-};
 
+    return res.status(statusCode).json({
+      message: err.message || "Internal server error",
+    });
+  }
+};
 
 const userLoginController = async (req, res) => {
-    try {
-        const { user, token } = await userLoginService(req.body);
+  try {
+    const { user, token } = await userLoginService(req.body);
 
-        // Set secure cookie
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 3600000
-        });
+    // Set secure cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 3600000,
+    });
 
-        return res.status(200).json({
-            message: 'Login successful',
-            user,
-            session : {access_token : token}
-        });
+    return res.status(200).json({
+      message: "Login successful",
+      user,
+      session: { access_token: token },
+    });
+  } catch (err) {
+    console.error("Error In userLoginController:", err.message);
 
-    } catch (err) {
-        console.error('Error In userLoginController:', err.message);
-
-        const statusCode = err.statusCode || 500;
-        return res.status(statusCode).json({
-            message: err.message || 'Internal server error'
-        });
-    }
+    const statusCode = err.statusCode || 500;
+    return res.status(statusCode).json({
+      message: err.message || "Internal server error",
+    });
+  }
 };
 
-
 const logoutController = (req, res) => {
-    res.clearCookie('token');
-    res.status(200).json({ message: 'Logout successful' });
-}
+  res.clearCookie("token");
+  res.status(200).json({ message: "Logout successful" });
+};
 
 const createUserByAdminController = async (req, res) => {
-    try {
-        const employee = await createUserByAdminService(req.body);
+  try {
+    const employee = await createUserByAdminService(req.body);
 
-        return res.status(201).json({
-            message: 'Employee added successfully',
-            employee
-        });
+    return res.status(201).json({
+      message: "Employee added successfully",
+      employee,
+    });
+  } catch (err) {
+    console.error("Error In createUserByAdminController:", err.message);
 
-    } catch (err) {
-        console.error('Error In createUserByAdminController:', err.message);
+    const statusCode = err.statusCode || 500;
 
-        const statusCode = err.statusCode || 500;
-
-        // Check for specific Postgres Unique Violations (Email or Employee ID)
-        if (err.code === '23505') {
-            return res.status(409).json({
-                message: 'Email or Employee ID already exists'
-            });
-        }
-
-        return res.status(statusCode).json({
-            message: err.message || 'Internal server error'
-        });
+    // Check for specific Postgres Unique Violations (Email or Employee ID)
+    if (err.code === "23505") {
+      return res.status(409).json({
+        message: "Email or Employee ID already exists",
+      });
     }
+
+    return res.status(statusCode).json({
+      message: err.message || "Internal server error",
+    });
+  }
 };
 
 const bulkAddEmployeesController = async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded' });
-        }
-
-        // 2. Convert file to JSON array
-        const jsonData = await parseFileToJson(req.file);
-        // 3. Pass the data and company context to the service
-        const createdUsers = await createBulkUsersByAdminService(jsonData);
-
-        return res.status(201).json({
-            message: 'Bulk Employees created successfully',
-            count: createdUsers.length,
-            data: createdUsers
-        });
-
-    } catch (err) {
-        console.error('Bulk Upload Error:', err.message);
-        return res.status(500).json({ message: err.message });
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
     }
+
+    // 2. Convert file to JSON array
+    const jsonData = await parseFileToJson(req.file);
+    // 3. Pass the data and company context to the service
+    const createdUsers = await createBulkUsersByAdminService(jsonData);
+
+    return res.status(201).json({
+      message: "Bulk Employees created successfully",
+      count: createdUsers.length,
+      data: createdUsers,
+    });
+  } catch (err) {
+    console.error("Bulk Upload Error:", err.message);
+    return res.status(500).json({ message: err.message });
+  }
 };
 
 module.exports = {
-    createUserController,
-    userLoginController,
-    logoutController,
-    createUserByAdminController,
-    bulkAddEmployeesController
+  createUserController,
+  userLoginController,
+  logoutController,
+  createUserByAdminController,
+  bulkAddEmployeesController,
 };
