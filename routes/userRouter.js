@@ -16,7 +16,6 @@ router.get("/IspasswordChanged/:id", IspasswordChangedController);
 router.get("/getUserDetails/:id", getUserDetailsController);
 router.get("/listAllEmployees/:id", getUserDetailsOfAnCompanyController);
 
-
 router.use(middleware);
 
 router.patch("/terminateUserById/:id", terminateUserByIdController); // New route for terminating an employee by admin

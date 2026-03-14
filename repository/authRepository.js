@@ -67,12 +67,15 @@ const createUserByAdmin = async (
 };
 
 const checkUserAlreadyExistInDBAndGetData = async (userId) => {
-  const sql = "SELECT * FROM users WHERE id = $1";
+  const sql = `
+    SELECT u.*, c.name AS company_name 
+    FROM users u 
+    LEFT JOIN companies c ON u.company_id = c.id 
+    WHERE u.id = $1`;
   try {
     const result = await pool.query(sql, [userId]);
     return result.rows;
   } catch (dbError) {
-    console.error("Database execution error:", dbError.message);
     throw dbError;
   }
 };

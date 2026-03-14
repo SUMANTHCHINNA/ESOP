@@ -1,11 +1,14 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const middleware = require('../Middlewares/auth');
-const {createExitSummaryController,getExitSummaryController} = require('../controllers/exitSummaryController')
+const middleware = require("../Middlewares/auth");
+const {
+  createExitSummaryController,
+  getExitSummaryController,
+} = require("../controllers/exitSummaryController");
+
+router.get("/getExitSummary/:id", getExitSummaryController);
 
 router.use(middleware);
-router.post('/createExitSummary/:id',createExitSummaryController)
-router.get('/getExitSummary/:id', getExitSummaryController);
-
+router.post("/createExitSummary/:id", createExitSummaryController);
 
 module.exports = router;

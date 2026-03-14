@@ -12,17 +12,14 @@ const {
 } = require("../repository/usersRepository");
 
 const getUserDetailsService = async (userId) => {
-  // 1. Validation (Optional but good practice)
   if (!userId) {
     const error = new Error("userId is required");
     error.statusCode = 400;
     throw error;
   }
 
-  // 2. Repository Call
   const users = await checkUserAlreadyExistInDBAndGetData(userId);
 
-  // 3. Check if user exists
   if (users.length === 0) {
     const error = new Error("User not found");
     error.statusCode = 404;
@@ -31,15 +28,9 @@ const getUserDetailsService = async (userId) => {
 
   const user = users[0];
 
-  // 4. Format and return data (Filtering out sensitive fields like password)
   return {
-    id: user.id,
-    full_name: user.full_name,
-    user_email: user.user_email,
-    company_id: user.company_id,
-    employment_type: user.employment_type,
-    status: user.status,
-    termination_date: user.termination_date,
+    ...user,
+    company: user.company_name,
   };
 };
 

@@ -1,17 +1,17 @@
-const { Pool } = require('pg');
-const dotenv = require('dotenv');
+const { Pool } = require("pg");
+const dotenv = require("dotenv");
 dotenv.config();
 
 const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
 });
 
 const createEnums = async () => {
-    const query = `
+  const query = `
         DO $$ 
         BEGIN 
             -- Grant Status
@@ -40,18 +40,28 @@ const createEnums = async () => {
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'employment_type_enum') THEN
                 CREATE TYPE employment_type_enum AS ENUM ('admin', 'employee', 'employer','viewer','hr');
             END IF;
+
+            -- user_status TYPE
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_status_enum') THEN
+                CREATE TYPE user_status_enum AS ENUM ('active', 'resigned', 'terminated');
+            END IF;
+
+            -- company status Type
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'company_status_enum') THEN
+                CREATE TYPE company_status_enum AS ENUM ('active', 'in-active');
+            END IF;
         END $$;
     `;
-    try {
-        await pool.query(query);
-        console.log('All ESOP Enums initialized successfully');
-    } catch (err) {
-        console.error('Error creating Enums:', err.message);
-    }
+  try {
+    await pool.query(query);
+    console.log("All ESOP Enums initialized successfully");
+  } catch (err) {
+    console.error("Error creating Enums:", err.message);
+  }
 };
 
 const createCompaniesTable = async () => {
-    const query = `
+  const query = `
         CREATE TABLE IF NOT EXISTS companies (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             name VARCHAR(255) NOT NULL,
@@ -68,51 +78,52 @@ const createCompaniesTable = async () => {
             phone VARCHAR(20),
             share_price DECIMAL(15, 2),
             total_pool_shares BIGINT,
-            is_active BOOLEAN DEFAULT TRUE,
+            status company_status_enum DEFAULT 'active',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `;
-    try {
-        await pool.query(query);
-        console.log('Companies table initialized successfully');
-    } catch (err) {
-        console.error('Error creating companies table:', err);
-    }
+  try {
+    await pool.query(query);
+    console.log("Companies table initialized successfully");
+  } catch (err) {
+    console.error("Error creating companies table:", err);
+  }
 };
 
 const createUsersTable = async () => {
-    const query = `
-        CREATE TABLE IF NOT EXISTS users (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            user_email VARCHAR(100) UNIQUE NOT NULL,
-            full_name VARCHAR(100) NOT NULL,
-            user_pass VARCHAR(255) NOT NULL,
-            company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
-            employee_id VARCHAR(50) UNIQUE,
-            department VARCHAR(100),
-            position VARCHAR(100),
-            pan VARCHAR(10) UNIQUE,
-            hire_date DATE,
-            termination_date DATE,
-            employment_type employment_type_enum DEFAULT 'employer',
-            is_active BOOLEAN DEFAULT TRUE,
-            password_changed BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE INDEX IF NOT EXISTS idx_users_company ON users(company_id);
-    `;
-    try {
-        await pool.query(query);
-        console.log('Users table initialized successfully');
-    } catch (err) {
-        console.error('Error creating users table:', err);
-    }
+  const query = `
+          CREATE TABLE IF NOT EXISTS users (
+              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              user_email VARCHAR(100) UNIQUE NOT NULL,
+              full_name VARCHAR(100) NOT NULL,
+              user_pass VARCHAR(255) NOT NULL,
+              company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+              employee_id VARCHAR(50) UNIQUE,
+              department VARCHAR(100),
+              position VARCHAR(100),
+              pan VARCHAR(10) UNIQUE,
+              hire_date DATE,
+              termination_date DATE,
+              employment_type employment_type_enum DEFAULT 'employer',
+              status user_status_enum DEFAULT 'active',
+              password_changed BOOLEAN DEFAULT FALSE,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+          CREATE INDEX IF NOT EXISTS idx_users_company ON users(company_id);
+          CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+      `;
+  try {
+    await pool.query(query);
+    console.log("Users table initialized successfully");
+  } catch (err) {
+    console.error("Error creating users table:", err);
+  }
 };
 
 const createEsopPlanTable = async () => {
-    const query = `
+  const query = `
         CREATE TABLE IF NOT EXISTS esop_plans (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -145,16 +156,16 @@ const createEsopPlanTable = async () => {
         );
         CREATE INDEX IF NOT EXISTS idx_esop_plans_company ON esop_plans(company_id);
     `;
-    try {
-        await pool.query(query);
-        console.log('ESOP Plans table initialized successfully');
-    } catch (err) {
-        console.error('Error creating ESOP Plans table:', err);
-    }
+  try {
+    await pool.query(query);
+    console.log("ESOP Plans table initialized successfully");
+  } catch (err) {
+    console.error("Error creating ESOP Plans table:", err);
+  }
 };
 
 const createEsopGrantsTable = async () => {
-    const query = `
+  const query = `
         CREATE TABLE IF NOT EXISTS esop_grants (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -182,16 +193,16 @@ const createEsopGrantsTable = async () => {
         CREATE INDEX IF NOT EXISTS idx_grants_employee ON esop_grants(employee_id);
         CREATE INDEX IF NOT EXISTS idx_grants_status ON esop_grants(status);
     `;
-    try {
-        await pool.query(query);
-        console.log('ESOP Grants table initialized successfully');
-    } catch (err) {
-        console.error('Error creating grants table:', err);
-    }
+  try {
+    await pool.query(query);
+    console.log("ESOP Grants table initialized successfully");
+  } catch (err) {
+    console.error("Error creating grants table:", err);
+  }
 };
 
 const createExercisesTable = async () => {
-    const query = `
+  const query = `
         CREATE TABLE IF NOT EXISTS exercises (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -223,16 +234,16 @@ const createExercisesTable = async () => {
         CREATE INDEX IF NOT EXISTS idx_exercise_employee ON exercises(employee_id);
         CREATE INDEX IF NOT EXISTS idx_exercise_status ON exercises(status);
     `;
-    try {
-        await pool.query(query);
-        console.log('Exercises table initialized successfully');
-    } catch (err) {
-        console.error('Error creating Exercises table:', err);
-    }
+  try {
+    await pool.query(query);
+    console.log("Exercises table initialized successfully");
+  } catch (err) {
+    console.error("Error creating Exercises table:", err);
+  }
 };
 
 const createFvmValuationsTable = async () => {
-    const query = `
+  const query = `
                 CREATE TABLE IF NOT EXISTS fmv_valuations (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -263,17 +274,16 @@ const createFvmValuationsTable = async () => {
         ON fmv_valuations(company_id) 
         WHERE is_active = TRUE;
     `;
-    try {
-        await pool.query(query);
-        console.log('Fvm_Valuations table initialized successfully');
-    }
-    catch (err) {
-        console.error('Error creating Exercises table:', err);
-    }
-}
+  try {
+    await pool.query(query);
+    console.log("Fvm_Valuations table initialized successfully");
+  } catch (err) {
+    console.error("Error creating Exercises table:", err);
+  }
+};
 
 const createDocumentTemplateTable = async () => {
-    const query = `
+  const query = `
                 CREATE TABLE IF NOT EXISTS document_templates (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -297,17 +307,16 @@ const createDocumentTemplateTable = async () => {
         -- Index for fast lookup by type
         CREATE INDEX IF NOT EXISTS idx_template_lookup ON document_templates(company_id, template_type) WHERE is_default = TRUE;
     `;
-    try {
-        await pool.query(query);
-        console.log('DocumentTemplate table initialized successfully');
-    }
-    catch (err) {
-        console.error('Error  createDocumentTemplateTable table:', err);
-    }
-}
+  try {
+    await pool.query(query);
+    console.log("DocumentTemplate table initialized successfully");
+  } catch (err) {
+    console.error("Error  createDocumentTemplateTable table:", err);
+  }
+};
 
 const auditFreezeTable = async () => {
-    const query = `
+  const query = `
         CREATE TABLE IF NOT EXISTS audit_freeze (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -324,17 +333,16 @@ const auditFreezeTable = async () => {
         ON audit_freeze (company_id) 
         WHERE is_active = TRUE;
     `;
-    try {
-        await pool.query(query);
-        console.log('Audit Freeze table and index initialized successfully');
-    }
-    catch (err) {
-        console.error('Error initializing Audit Freeze table:', err.message);
-    }
-}
+  try {
+    await pool.query(query);
+    console.log("Audit Freeze table and index initialized successfully");
+  } catch (err) {
+    console.error("Error initializing Audit Freeze table:", err.message);
+  }
+};
 
 const createExitSummariesTable = async () => {
-    const query = `
+  const query = `
         CREATE TABLE IF NOT EXISTS esop_exit_summaries (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -369,24 +377,24 @@ const createExitSummariesTable = async () => {
         CREATE INDEX IF NOT EXISTS idx_exit_summary_employee ON esop_exit_summaries(employee_id);
         CREATE INDEX IF NOT EXISTS idx_exit_summary_company ON esop_exit_summaries(company_id);
     `;
-    try {
-        await pool.query(query);
-        console.log('ESOP Exit Summaries table initialized successfully');
-    } catch (err) {
-        console.error('Error creating Exit Summaries table:', err.message);
-    }
+  try {
+    await pool.query(query);
+    console.log("ESOP Exit Summaries table initialized successfully");
+  } catch (err) {
+    console.error("Error creating Exit Summaries table:", err.message);
+  }
 };
 
 module.exports = {
-    pool,
-    createEnums,
-    createCompaniesTable,
-    createUsersTable,
-    createEsopPlanTable,
-    createEsopGrantsTable,
-    createExercisesTable,
-    createFvmValuationsTable,
-    createDocumentTemplateTable,
-    auditFreezeTable,
-    createExitSummariesTable
+  pool,
+  createEnums,
+  createCompaniesTable,
+  createUsersTable,
+  createEsopPlanTable,
+  createEsopGrantsTable,
+  createExercisesTable,
+  createFvmValuationsTable,
+  createDocumentTemplateTable,
+  auditFreezeTable,
+  createExitSummariesTable,
 };

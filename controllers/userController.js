@@ -19,15 +19,7 @@ const getUserDetailsController = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "User details retrieved successfully",
-      user: {
-        user_id: userDetails.id,
-        email: userDetails.user_email,
-        full_name: userDetails.full_name,
-        company_id: userDetails.company_id,
-        employment_type: userDetails.employment_type,
-        status: userDetails.status,
-        termination_date: userDetails.termination_date,
-      },
+      data: userDetails,
     });
   } catch (err) {
     console.error("Error In getUserDetailsController:", err.message);
@@ -162,7 +154,7 @@ const updatePasswordController = async (req, res) => {
     console.error("Error in updatePasswordController:", err.message);
     return res.status(err.statusCode || 500).json({
       success: false,
-      error: err.message,
+      message: err.message,
     });
   }
 };
