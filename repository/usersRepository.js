@@ -163,6 +163,22 @@ const IspasswordChangedRepository = async (userId) => {
   }
 };
 
+const deleteAnEmployeeRepository = async (userId) => {
+  // Fixed SQL syntax: Removed redundant table name and corrected equality operator
+  const sql = `DELETE FROM users WHERE id = $1`;
+
+  try {
+    const values = [userId];
+    const result = await pool.query(sql, values);
+
+    // Return true if a row was deleted, false otherwise
+    return result.rowCount > 0;
+  } catch (dbError) {
+    console.error("Database deletion error:", dbError.message);
+    throw dbError;
+  }
+};
+
 module.exports = {
   getAllEmployeesOfAnCompany,
   checkAdminCompanyDetails,
@@ -172,4 +188,5 @@ module.exports = {
   updateUserDetailsRepository,
   updatePasswordRepository,
   IspasswordChangedRepository,
+  deleteAnEmployeeRepository,
 };

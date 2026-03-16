@@ -6,6 +6,7 @@ const {
   updateUserDetailsService,
   updatePasswordService,
   IspasswordChangedService,
+  deleteAnEmployeeService,
 } = require("../services/userService");
 
 const getUserDetailsController = async (req, res) => {
@@ -180,6 +181,23 @@ const IspasswordChangedController = async (req, res) => {
   }
 };
 
+const deleteAnEmployeeController = async (req, res) => {
+  try {
+    const userid = req.params.id;
+    await deleteAnEmployeeService(userid);
+    return res.status(200).json({
+      success: true,
+      message: "Employee deleted successfully.",
+    });
+  } catch (err) {
+    console.error("Error in IspasswordChangedController:", err.message);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+
 module.exports = {
   getUserDetailsController,
   getUserDetailsOfAnCompanyController,
@@ -188,4 +206,5 @@ module.exports = {
   updateUserDetailsController,
   updatePasswordController,
   IspasswordChangedController,
+  deleteAnEmployeeController,
 };

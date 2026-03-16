@@ -51,7 +51,7 @@ const getCompanyController = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Company details retrieved successfully",
-      company,
+      data: company,
     });
   } catch (err) {
     console.error("Error In getCompanyController:", err.message);

@@ -79,6 +79,7 @@ const createUserByAdminController = async (req, res) => {
     const employee = await createUserByAdminService(req.body);
 
     return res.status(201).json({
+      status: true,
       message: "Employee added successfully",
       employee,
     });

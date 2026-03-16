@@ -9,6 +9,7 @@ const {
   updateUserDetailsController,
   updatePasswordController,
   IspasswordChangedController,
+  deleteAnEmployeeController,
 } = require("../controllers/userController");
 
 router.get("/getUserRole/:id", getUserRoleController);
@@ -21,5 +22,6 @@ router.use(middleware);
 router.patch("/terminateUserById/:id", terminateUserByIdController); // New route for terminating an employee by admin
 router.patch("/updateUserDetails/:id", updateUserDetailsController);
 router.patch("/updatePassword/:id", updatePasswordController);
+router.delete("/delete/:id", deleteAnEmployeeController);
 
 module.exports = router;

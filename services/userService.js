@@ -9,6 +9,7 @@ const {
   updateUserDetailsRepository,
   updatePasswordRepository,
   IspasswordChangedRepository,
+  deleteAnEmployeeRepository,
 } = require("../repository/usersRepository");
 
 const getUserDetailsService = async (userId) => {
@@ -132,6 +133,15 @@ const IspasswordChangedService = async (userId) => {
   }
 };
 
+const deleteAnEmployeeService = async (userId) => {
+  try {
+    const response = await deleteAnEmployeeRepository(userId);
+    return response;
+  } catch (err) {
+    throw err;
+  }
+};
+
 module.exports = {
   getUserDetailsService,
   getCompanyAndEmployeesService,
@@ -140,4 +150,5 @@ module.exports = {
   updateUserDetailsService,
   updatePasswordService,
   IspasswordChangedService,
+  deleteAnEmployeeService,
 };

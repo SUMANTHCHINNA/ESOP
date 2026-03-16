@@ -75,7 +75,7 @@ const createCompanyByAdmin = async (companyData) => {
 const getCompanyDetailsByAdminUserId = async (adminUserId) => {
   const sql = `
   SELECT * FROM companies
-  WHERE admin_user_id = $1 OR id = $1
+  WHERE admin_user_id = $1 OR id = $1 
   ORDER BY created_at DESC
   LIMIT 1
 `;
