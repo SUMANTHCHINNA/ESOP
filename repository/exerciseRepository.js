@@ -1,13 +1,18 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+const { Pool } = require("pg");
+require("dotenv").config();
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
 });
 
-const createExerciseRepository = async (body, employeeId, companyId, exercise_price) => {
-    console.log(body, employeeId, companyId, exercise_price)
-    const sql = `
+const createExerciseRepository = async (
+  body,
+  employeeId,
+  companyId,
+  exercise_price
+) => {
+  console.log(body, employeeId, companyId, exercise_price);
+  const sql = `
         INSERT INTO exercises (
             company_id, 
             employee_id, 
@@ -22,45 +27,51 @@ const createExerciseRepository = async (body, employeeId, companyId, exercise_pr
         RETURNING *;
     `;
 
-    // 3. Map values from body and arguments
-    const values = [
-        companyId,
-        employeeId,
-        body.grant_id,
-        body.shares_exercised,
-        exercise_price,
-        body.payment_method || 'cashless',
-        body.withheld || 0,
-        body.notes || null
-    ];
+  // 3. Map values from body and arguments
+  const values = [
+    companyId,
+    employeeId,
+    body.grant_id,
+    body.shares_exercised,
+    exercise_price,
+    body.payment_method || "cashless",
+    body.withheld || 0,
+    body.notes || null,
+  ];
 
-    try {
-        const result = await pool.query(sql, values);
-        return result.rows[0];
-    } catch (dbError) {
-        console.error('Database Error in createExerciseRepository:', dbError.message);
-        throw dbError;
-    }
+  try {
+    const result = await pool.query(sql, values);
+    return result.rows[0];
+  } catch (dbError) {
+    console.error(
+      "Database Error in createExerciseRepository:",
+      dbError.message
+    );
+    throw dbError;
+  }
 };
 
 const getExerciseHistoryOfGrantRepository = async (grantId) => {
-    // Sort by exercise_date descending to show the latest transactions first
-    const sql = `
+  // Sort by exercise_date descending to show the latest transactions first
+  const sql = `
         SELECT * FROM exercises 
-        WHERE grant_id = $1 
+        WHERE grant_id = $1 OR employee_id = $1
         ORDER BY exercise_date DESC, created_at DESC;
     `;
-    try {
-        const result = await pool.query(sql, [grantId]);
-        return result.rows;
-    } catch (dbError) {
-        console.error('Database Error in getExerciseHistoryRepository:', dbError.message);
-        throw dbError;
-    }
+  try {
+    const result = await pool.query(sql, [grantId]);
+    return result.rows;
+  } catch (dbError) {
+    console.error(
+      "Database Error in getExerciseHistoryRepository:",
+      dbError.message
+    );
+    throw dbError;
+  }
 };
 
 const getExercisesUponStatusRepository = async (status) => {
-    const sql = `
+  const sql = `
         SELECT e.*, u.full_name, g.grant_name 
         FROM exercises e
         JOIN users u ON e.employee_id = u.id
@@ -68,39 +79,44 @@ const getExercisesUponStatusRepository = async (status) => {
         WHERE e.status = $1::exercise_status_enum
         ORDER BY e.created_at DESC;
     `;
-    try {
-        const result = await pool.query(sql, [status]);
-        return result.rows;
-    } catch (dbError) {
-        console.error('Database Error:', dbError.message);
-        throw dbError;
-    }
+  try {
+    const result = await pool.query(sql, [status]);
+    return result.rows;
+  } catch (dbError) {
+    console.error("Database Error:", dbError.message);
+    throw dbError;
+  }
 };
 
-const approveOrRejectExerciseRepository = async (exerciseId, action, adminUserId, rejectionReason) => {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
+const approveOrRejectExerciseRepository = async (
+  exerciseId,
+  action,
+  adminUserId,
+  rejectionReason
+) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-        // 1. Fetch current record and lock row
-        const findSql = `SELECT grant_id, shares_exercised, status FROM exercises WHERE id = $1 FOR UPDATE`;
-        const exerciseResult = await client.query(findSql, [exerciseId]);
+    // 1. Fetch current record and lock row
+    const findSql = `SELECT grant_id, shares_exercised, status FROM exercises WHERE id = $1 FOR UPDATE`;
+    const exerciseResult = await client.query(findSql, [exerciseId]);
 
-        if (exerciseResult.rows.length === 0) {
-            throw new Error('Exercise record not found');
-        }
+    if (exerciseResult.rows.length === 0) {
+      throw new Error("Exercise record not found");
+    }
 
-        const { grant_id, shares_exercised, status } = exerciseResult.rows[0];
+    const { grant_id, shares_exercised, status } = exerciseResult.rows[0];
 
-        if (status !== 'submitted') {
-            throw new Error(`Exercise is already ${status}`);
-        }
+    if (status !== "submitted") {
+      throw new Error(`Exercise is already ${status}`);
+    }
 
-        // Map 'approve' to 'approved' and 'reject' to 'rejected'
-        const finalStatusValue = action === 'approve' ? 'approved' : 'rejected';
+    // Map 'approve' to 'approved' and 'reject' to 'rejected'
+    const finalStatusValue = action === "approve" ? "approved" : "rejected";
 
-        // 2. Update Exercises Table
-        const updateExerciseSql = `
+    // 2. Update Exercises Table
+    const updateExerciseSql = `
             UPDATE exercises 
             SET 
                 status = $1::exercise_status_enum, 
@@ -110,17 +126,17 @@ const approveOrRejectExerciseRepository = async (exerciseId, action, adminUserId
                 updated_at = NOW() 
             WHERE id = $4 
             RETURNING *`;
-        
-        const updatedExercise = await client.query(updateExerciseSql, [
-            finalStatusValue, 
-            action === 'reject' ? rejectionReason : null, 
-            adminUserId, 
-            exerciseId
-        ]);
 
-        // 3. Update Esop_Grant Table (The Fixed Query)
-        if (action === 'approve') {
-            const updateGrantSql = `
+    const updatedExercise = await client.query(updateExerciseSql, [
+      finalStatusValue,
+      action === "reject" ? rejectionReason : null,
+      adminUserId,
+      exerciseId,
+    ]);
+
+    // 3. Update Esop_Grant Table (The Fixed Query)
+    if (action === "approve") {
+      const updateGrantSql = `
                 UPDATE esop_grants 
                 SET 
                     exercised_shares = exercised_shares + $1,
@@ -131,25 +147,24 @@ const approveOrRejectExerciseRepository = async (exerciseId, action, adminUserId
                         ELSE status::text 
                     END)::grant_status_enum
                 WHERE id = $2`;
-            
-            await client.query(updateGrantSql, [shares_exercised, grant_id]);
-        }
 
-        await client.query('COMMIT');
-        return updatedExercise.rows[0];
-
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Database Transaction Error:', err.message);
-        throw err;
-    } finally {
-        client.release();
+      await client.query(updateGrantSql, [shares_exercised, grant_id]);
     }
-}
+
+    await client.query("COMMIT");
+    return updatedExercise.rows[0];
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Database Transaction Error:", err.message);
+    throw err;
+  } finally {
+    client.release();
+  }
+};
 
 module.exports = {
-    createExerciseRepository,
-    getExerciseHistoryOfGrantRepository,
-    getExercisesUponStatusRepository,
-    approveOrRejectExerciseRepository
-}
+  createExerciseRepository,
+  getExerciseHistoryOfGrantRepository,
+  getExercisesUponStatusRepository,
+  approveOrRejectExerciseRepository,
+};

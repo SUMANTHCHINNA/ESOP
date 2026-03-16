@@ -71,7 +71,7 @@ const checkUserAlreadyExistInDBAndGetData = async (userId) => {
     SELECT u.*, c.name AS company_name 
     FROM users u 
     LEFT JOIN companies c ON u.company_id = c.id 
-    WHERE u.id = $1`;
+    WHERE u.id = $1 or u.company_id = $1`;
   try {
     const result = await pool.query(sql, [userId]);
     return result.rows;

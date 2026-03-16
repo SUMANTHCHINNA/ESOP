@@ -115,7 +115,7 @@ const createUserByAdminService = async (body) => {
   // Using a default password 'Password' as per your original code
   const hashedPassword = await bcrypt.hash("password", 10);
 
-  const normalizedEmploymentType = body.employment_type.toUpperCase();
+  const normalizedEmploymentType = body.employment_type.toLowerCase();
   // 3. Repository Call
   const result = await createUserByAdmin(
     employee_name,

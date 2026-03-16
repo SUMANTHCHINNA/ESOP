@@ -51,6 +51,7 @@ const userLoginController = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 3600000,
+      sameSite: "none",
     });
 
     return res.status(200).json({

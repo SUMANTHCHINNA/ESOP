@@ -1,56 +1,60 @@
-const { createEsopPlanService, getEsopPlanService, updateEsopPlanService, getEsopPlanPoolStatusService } = require('../services/esopPlanService')
-const { getCompanyId } = require('../repository/usersRepository')
+const {
+  createEsopPlanService,
+  getEsopPlanService,
+  updateEsopPlanService,
+  getEsopPlanPoolStatusService,
+} = require("../services/esopPlanService");
+const { getCompanyId } = require("../repository/usersRepository");
 
 const createEsopPlanController = async (req, res) => {
-    try {
-        const esopPlan = await createEsopPlanService(req.body);
+  try {
+    const esopPlan = await createEsopPlanService(req.body);
 
-        return res.status(201).json({
-            message: 'ESOP Plan created successfully',
-            plan: esopPlan
-        });
-    } catch (err) {
-        console.error('Error In createEsopPlanController:', err.message);
-        const statusCode = err.statusCode || 500;
-        return res.status(statusCode).json({
-            message: err.message || 'Failed to create ESOP Plan'
-        });
-    }
+    return res.status(201).json({
+      message: "ESOP Plan created successfully",
+      plan: esopPlan,
+    });
+  } catch (err) {
+    console.error("Error In createEsopPlanController:", err.message);
+    const statusCode = err.statusCode || 500;
+    return res.status(statusCode).json({
+      message: err.message || "Failed to create ESOP Plan",
+    });
+  }
 };
 
 const getEsopPlansController = async (req, res) => {
-    try {
-        let email = req.user.user_email;
-        const companyId = await getCompanyId(email);
-        const esopPlan = await getEsopPlanService(companyId);
+  try {
+    let companyId = req.params.id;
+    const esopPlan = await getEsopPlanService(companyId);
 
-        return res.status(201).json({
-            message: 'ESOP Plans fetched successfully',
-            plan: esopPlan
-        });
-    } catch (err) {
-        console.error('Error In getEsopPlans:', err.message);
-        const statusCode = err.statusCode || 500;
-        return res.status(statusCode).json({
-            message: err.message || 'Failed to create ESOP Plan'
-        });
-    }
+    return res.status(201).json({
+      message: "ESOP Plans fetched successfully",
+      data: esopPlan,
+    });
+  } catch (err) {
+    console.error("Error In getEsopPlans:", err.message);
+    const statusCode = err.statusCode || 500;
+    return res.status(statusCode).json({
+      message: err.message || "Failed to create ESOP Plan",
+    });
+  }
 };
 
 const updateEsopPlanController = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const planData = req.body;
-        const result = await updateEsopPlanService(id, planData);
+  try {
+    const { id } = req.params;
+    const planData = req.body;
+    const result = await updateEsopPlanService(id, planData);
 
-        return res.status(200).json({
-            message: 'ESOP Plan updated successfully',
-            data: result
-        });
-    } catch (err) {
-        const status = err.statusCode || 500;
-        return res.status(status).json({ error: err.message });
-    }
+    return res.status(200).json({
+      message: "ESOP Plan updated successfully",
+      data: result,
+    });
+  } catch (err) {
+    const status = err.statusCode || 500;
+    return res.status(status).json({ error: err.message });
+  }
 };
 
 // const deleteEsopPlan = async (req, res) => {
@@ -72,11 +76,9 @@ const updateEsopPlanController = async (req, res) => {
 //     }
 // };
 
-
-
 module.exports = {
-    createEsopPlanController,
-    getEsopPlansController,
-    updateEsopPlanController,
-    // deleteEsopPlan 
-}
+  createEsopPlanController,
+  getEsopPlansController,
+  updateEsopPlanController,
+  // deleteEsopPlan
+};

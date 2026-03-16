@@ -105,9 +105,10 @@ const createUsersTable = async () => {
               pan VARCHAR(10) UNIQUE,
               hire_date DATE,
               termination_date DATE,
-              employment_type employment_type_enum DEFAULT 'employer',
+              employment_type employment_type_enum DEFAULT 'admin',
               status user_status_enum DEFAULT 'active',
               password_changed BOOLEAN DEFAULT FALSE,
+              last_login_at DEFAULT CURRENT_TIMESTAMP,
               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           );

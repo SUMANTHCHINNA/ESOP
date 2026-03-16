@@ -6,8 +6,8 @@ const pool = new Pool({
 });
 
 const authMiddleware = async (req, res, next) => {
-  const authHeader = req.header("Authorization");
-  const token = authHeader?.replace("Bearer ", "");
+  let authHeader = req.header("Authorization");
+  let token = authHeader?.replace("Bearer ", "");
 
   // check cookies
   if (!token && req.cookies) {

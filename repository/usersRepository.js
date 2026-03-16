@@ -16,7 +16,7 @@ const checkAdminCompanyDetails = async (adminId) => {
 const getAllEmployeesOfAnCompany = async (companyId) => {
   const sql = `
         SELECT id, full_name, user_email, employee_id, department, 
-               position, pan, hire_date, employment_type, is_active 
+               position, pan, hire_date, employment_type, status 
         FROM users 
         WHERE company_id = $1
     `;

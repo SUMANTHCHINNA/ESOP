@@ -8,7 +8,7 @@ const {
 const createCompanyController = async (req, res) => {
   try {
     console.log(req.body);
-    const adminId = req.user.id;
+    const adminId = req.body.admin_user_id;
     console.log(`Admin Id : ${adminId}`);
 
     // Pass the body and the user ID to the service
