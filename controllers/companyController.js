@@ -4,6 +4,7 @@ const {
   updateCompanyService,
   getCompanyAdminDetailsService,
 } = require("../services/companyService");
+const { getUserDetailsService } = require("../services/userService");
 
 const createCompanyController = async (req, res) => {
   try {
@@ -40,9 +41,14 @@ const createCompanyController = async (req, res) => {
 const getCompanyController = async (req, res) => {
   try {
     // Extract ID from Auth Middleware
-    const userId = req.params.id;
-    console.log(userId);
-
+    let userId = req.params.id;
+    const userDetails = await getUserDetailsService(userId);
+    console.log(userDetails);
+    if (userDetails.company_id != null) {
+      userId = userDetails.company_id;
+    } else {
+      userId = userId;
+    }
     // Call the Service
     const company = await getCompanyService(userId);
     console.log(company);
@@ -78,6 +84,7 @@ const updateCompanyController = async (req, res) => {
     );
 
     return res.status(200).json({
+      success : true,
       message: "Company updated successfully",
       company: updatedCompany,
     });

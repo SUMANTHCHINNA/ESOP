@@ -36,6 +36,7 @@ const getUserDetailsOfAnCompanyController = async (req, res) => {
   try {
     // adminId is extracted from the auth middleware (JWT)
     const adminId = req.params.id;
+    console.log(adminId);
 
     // Call the service to get both company and employee data
     const { company, employees } = await getCompanyAndEmployeesService(adminId);

@@ -60,7 +60,7 @@ const getEsopPlansOfAnCompany = async (companyId) => {
   const sql = `
     SELECT * FROM esop_plans 
     WHERE company_id = $1 
-    OR employee_id = $1 
+    // OR employee_id = $1 
     OR id = $1
   `;
 

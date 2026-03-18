@@ -70,6 +70,7 @@ const createCompaniesTable = async () => {
             pan_number VARCHAR(10) UNIQUE,
             gstin VARCHAR(15) UNIQUE,
             address_line1 TEXT,
+            address_line2 TEXT,
             city VARCHAR(100),
             state VARCHAR(100),
             pincode VARCHAR(10),

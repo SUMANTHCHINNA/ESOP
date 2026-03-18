@@ -21,7 +21,7 @@ const authMiddleware = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userQuery =
-      "SELECT id, full_name, user_email FROM users WHERE id = $1";
+      "SELECT id, full_name, user_email,employment_type FROM users WHERE id = $1";
     const result = await pool.query(userQuery, [decoded.id]);
 
     if (result.rows.length === 0) {

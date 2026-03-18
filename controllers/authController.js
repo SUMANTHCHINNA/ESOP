@@ -81,7 +81,7 @@ const createUserByAdminController = async (req, res) => {
     return res.status(201).json({
       status: true,
       message: "Employee added successfully",
-      employee,
+      data: employee,
     });
   } catch (err) {
     console.error("Error In createUserByAdminController:", err.message);

@@ -13,6 +13,6 @@ router.post("/createCompany", createCompanyController);
 router.get("/CompanyAdminDetails/:id", getCompanyAdminDetailsController);
 
 router.use(middleware);
-router.put("/updateCompanyDetails/:id", updateCompanyController);
+router.patch("/updateCompanyDetails/:id", updateCompanyController);
 
 module.exports = router;

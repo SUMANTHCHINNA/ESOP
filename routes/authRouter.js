@@ -28,5 +28,8 @@ router.post(
 ); // New controller for bulk adding employees
 
 router.use(auth);
+router.get("/me", (req, res) => {
+  res.json({ user: req.user });
+});
 
 module.exports = router;
