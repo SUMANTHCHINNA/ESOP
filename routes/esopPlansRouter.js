@@ -11,7 +11,7 @@ const {
 
 router.post("/createEsopPlan", createEsopPlanController);
 router.get("/getEsopPlans/:id", getEsopPlansController);
-router.put("/updateEsopPlan/:id", updateEsopPlanController);
+router.patch("/updateEsopPlan/:id", updateEsopPlanController);
 // router.delete('/deleteEsopPlan/:id', deleteEsopPlan);
 
 router.use(middleware);

@@ -4,7 +4,7 @@ dotenv.config();
 
 const pool = new Pool({
   user: process.env.DB_USER,
-  host: process.env.DB_HOST,
+  host: process.env.DB_HOST || 'esop-db',
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
@@ -16,7 +16,7 @@ const createEnums = async () => {
         BEGIN 
             -- Grant Status
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'grant_status_enum') THEN
-                CREATE TYPE grant_status_enum AS ENUM ('active', 'lapsed', 'cancelled', 'fully_exercised');
+                CREATE TYPE grant_status_enum AS ENUM ('active', 'vested', 'exercised', 'lapsed', 'cancelled');
             END IF;
 
             -- Exercise Status (Updated with 'submitted')
@@ -49,6 +49,10 @@ const createEnums = async () => {
             -- company status Type
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'company_status_enum') THEN
                 CREATE TYPE company_status_enum AS ENUM ('active', 'in-active');
+            END IF;
+
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'esopplan_status_enum') THEN
+                CREATE TYPE esopplan_status_enum AS ENUM ('active', 'in-active');
             END IF;
         END $$;
     `;
@@ -109,7 +113,7 @@ const createUsersTable = async () => {
               employment_type employment_type_enum DEFAULT 'admin',
               status user_status_enum DEFAULT 'active',
               password_changed BOOLEAN DEFAULT FALSE,
-              last_login_at DEFAULT CURRENT_TIMESTAMP,
+              last_login_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- FIXED: Added TIMESTAMP
               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           );
@@ -121,46 +125,74 @@ const createUsersTable = async () => {
     console.log("Users table initialized successfully");
   } catch (err) {
     console.error("Error creating users table:", err);
+    throw err; // Throw error to stop the chain if this fails
   }
 };
 
 const createEsopPlanTable = async () => {
   const query = `
+       
+        -- 1. Create Table with all UI-required fields
         CREATE TABLE IF NOT EXISTS esop_plans (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
             plan_name TEXT NOT NULL,
+            status esopplan_status_enum DEFAULT 'active',
+            plan_type TEXT NOT NULL DEFAULT 'stock_option',
+            
+            -- Financial & Pool Details
             total_shares_reserved BIGINT NOT NULL,
             shares_allocated BIGINT DEFAULT 0,
-            effective_date DATE NOT NULL,
-            expiry_date DATE NOT NULL,
-            plan_type TEXT NOT NULL,
-            currency VARCHAR(3) NOT NULL,
-            vesting_start_reference TEXT NOT NULL,
+            face_value_per_share DECIMAL(19, 4) DEFAULT 10.00,
+            currency VARCHAR(3) NOT NULL DEFAULT 'INR',
+            
+            -- Dates & Compliance
+            board_approval_date DATE,
+            effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
+            expiry_date DATE, -- Can be calculated in business logic (e.g., +10 years)
+            
+            -- Vesting Rules
+            vesting_method TEXT NOT NULL, -- 'linear' or 'percentage'
+            vesting_start_reference TEXT NOT NULL DEFAULT 'grant_date',
             default_vesting_period_years INTEGER NOT NULL,
             default_vesting_frequency TEXT NOT NULL,
             default_cliff_months INTEGER DEFAULT 0,
-            vesting_method TEXT NOT NULL,
             vesting_percentages JSONB DEFAULT NULL,
-            strike_price_type TEXT NOT NULL,
-            default_strike_price DECIMAL(19, 4) NOT NULL,
+            
+            -- Exercise & Strike Price
+            strike_price_type TEXT NOT NULL, -- 'fixed' or 'fmv'
+            default_strike_price DECIMAL(19, 4) NOT NULL DEFAULT 0,
             allow_strike_price_override BOOLEAN DEFAULT FALSE,
+            
+            -- Termination & Acceleration
             post_termination_exercise_days INTEGER DEFAULT 90,
             unvested_lapse_on_termination BOOLEAN DEFAULT TRUE,
             vested_lapse_after_window BOOLEAN DEFAULT TRUE,
             acceleration_on_change_of_control BOOLEAN DEFAULT FALSE,
             acceleration_on_termination_without_cause BOOLEAN DEFAULT FALSE,
+            
+            -- Eligibility & External Data
             eligible_participants TEXT[] DEFAULT '{}',
-            is_active BOOLEAN DEFAULT TRUE,
+            fmv_source TEXT,
+            
+            -- Document Storage URLs
+            plan_document_url TEXT,
+            board_resolution_url TEXT,
+            shareholder_resolution_url TEXT,
+            
+            -- Metadata & Timestamps
             metadata JSONB DEFAULT '{}',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
+
+        -- 3. Create Indexes for performance
         CREATE INDEX IF NOT EXISTS idx_esop_plans_company ON esop_plans(company_id);
     `;
+
   try {
     await pool.query(query);
-    console.log("ESOP Plans table initialized successfully");
+    console.log("ESOP Plans table with missing fields initialized successfully");
   } catch (err) {
     console.error("Error creating ESOP Plans table:", err);
   }
@@ -168,36 +200,54 @@ const createEsopPlanTable = async () => {
 
 const createEsopGrantsTable = async () => {
   const query = `
+
         CREATE TABLE IF NOT EXISTS esop_grants (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
             employee_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             esop_plan_id UUID NOT NULL REFERENCES esop_plans(id) ON DELETE CASCADE,
+            
+            -- Basic Grant Info
             grant_name VARCHAR(255) NOT NULL,
             grant_date DATE NOT NULL DEFAULT CURRENT_DATE,
-            total_shares DECIMAL(15, 2) NOT NULL CHECK (total_shares > 0),
-            exercise_price DECIMAL(15, 2) NOT NULL,
+            expiry_date DATE, 
+            
+            -- Financials (Use DECIMAL for currency precision)
+            total_shares DECIMAL(19, 4) NOT NULL CHECK (total_shares > 0),
+            exercise_price DECIMAL(19, 4) NOT NULL,
+            
+            -- Vesting Schedule
             vesting_start_date DATE NOT NULL,
             vesting_end_date DATE NOT NULL,
             vesting_period_months INT NOT NULL,
             cliff_months INT DEFAULT 0,
-            vesting_method VARCHAR(50) NOT NULL, 
+            vesting_frequency TEXT DEFAULT 'monthly', -- Added
+            vesting_method VARCHAR(50) NOT NULL, -- 'linear' or 'percentage'
             vesting_percentages JSONB DEFAULT NULL, 
-            vested_shares DECIMAL(15, 2) DEFAULT 0,
-            exercised_shares DECIMAL(15, 2) DEFAULT 0,
-            lapsed_shares DECIMAL(15, 2) DEFAULT 0,
+            
+            -- Share Tracking
+            vested_shares DECIMAL(19, 4) DEFAULT 0,
+            exercised_shares DECIMAL(19, 4) DEFAULT 0,
+            lapsed_shares DECIMAL(19, 4) DEFAULT 0,
+            
+            -- Status & Termination
             status grant_status_enum DEFAULT 'active',
+            termination_date DATE DEFAULT NULL, -- Added
+            is_accelerated BOOLEAN DEFAULT FALSE, -- Added
+            
             notes TEXT,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
+
+        -- Indexes for Dashboard Performance
         CREATE INDEX IF NOT EXISTS idx_grants_company ON esop_grants(company_id);
         CREATE INDEX IF NOT EXISTS idx_grants_employee ON esop_grants(employee_id);
-        CREATE INDEX IF NOT EXISTS idx_grants_status ON esop_grants(status);
+        CREATE INDEX IF NOT EXISTS idx_grants_plan ON esop_grants(esop_plan_id);
     `;
   try {
     await pool.query(query);
-    console.log("ESOP Grants table initialized successfully");
+    console.log("ESOP Grants table initialized successfully with termination fields");
   } catch (err) {
     console.error("Error creating grants table:", err);
   }
@@ -216,8 +266,12 @@ const createExercisesTable = async () => {
             exercise_date DATE NOT NULL DEFAULT CURRENT_DATE, 
             exercise_price NUMERIC(15, 2) NOT NULL,
             
-            -- Status & Workflow (using the Enum we created)
-            status exercise_status_enum DEFAULT 'submitted', 
+            -- New Columns with Data Types
+            requested_shares NUMERIC(15, 2) NOT NULL,
+            requested_exercise_date DATE NOT NULL DEFAULT CURRENT_DATE,
+            
+            -- Status & Workflow
+            status exercise_status_enum DEFAULT 'submitted',
             
             -- Payment & Compliance
             payment_method payment_method_enum DEFAULT 'cashless',
@@ -232,6 +286,7 @@ const createExercisesTable = async () => {
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
+
         CREATE INDEX IF NOT EXISTS idx_exercise_grant ON exercises(grant_id);
         CREATE INDEX IF NOT EXISTS idx_exercise_employee ON exercises(employee_id);
         CREATE INDEX IF NOT EXISTS idx_exercise_status ON exercises(status);
@@ -240,7 +295,8 @@ const createExercisesTable = async () => {
     await pool.query(query);
     console.log("Exercises table initialized successfully");
   } catch (err) {
-    console.error("Error creating Exercises table:", err);
+    console.error("Error creating Exercises table:", err.message);
+    throw err;
   }
 };
 
@@ -316,6 +372,53 @@ const createDocumentTemplateTable = async () => {
     console.error("Error  createDocumentTemplateTable table:", err);
   }
 };
+
+
+const createDocumentsTable = async () => {
+  const query = `
+        CREATE TABLE IF NOT EXISTS documents (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+            
+            -- References users table as requested
+            employee_id UUID REFERENCES users(id) ON DELETE CASCADE, 
+            
+            -- References esop_grants table
+            grant_id UUID REFERENCES esop_grants(id) ON DELETE CASCADE,
+            
+            -- Document Details
+            document_type VARCHAR(50) NOT NULL, -- e.g., 'GRANT_LETTER', 'EXERCISE_FORM'
+            document_name VARCHAR(255) NOT NULL,
+            file_url TEXT NOT NULL,
+            file_size INTEGER, -- Size in bytes
+            
+            -- Signature & Workflow
+            status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'signed', 'expired'
+            signed_at TIMESTAMP WITH TIME ZONE,
+            signed_by UUID REFERENCES users(id), -- Admin or User who signed
+            
+            -- Metadata
+            uploaded_by UUID REFERENCES users(id),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+
+        -- Indexes for fast filtering in the Document Center
+        CREATE INDEX IF NOT EXISTS idx_documents_company ON documents(company_id);
+        CREATE INDEX IF NOT EXISTS idx_documents_employee ON documents(employee_id);
+        CREATE INDEX IF NOT EXISTS idx_documents_grant ON documents(grant_id);
+        CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
+    `;
+
+  try {
+    await pool.query(query);
+    console.log("Documents table initialized successfully");
+  } catch (err) {
+    console.error("Error creating documents table:", err.message);
+  }
+};
+
+
 
 const auditFreezeTable = async () => {
   const query = `
@@ -399,4 +502,5 @@ module.exports = {
   createDocumentTemplateTable,
   auditFreezeTable,
   createExitSummariesTable,
+  createDocumentsTable
 };

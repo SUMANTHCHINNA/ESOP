@@ -11,9 +11,9 @@ const createCompanyByAdmin = async (companyData) => {
         INSERT INTO companies (
             name, admin_user_id, cin, pan_number, gstin, 
             address_line1, city, state, pincode, 
-            company_email, phone, share_price, total_pool_shares
+            company_email, phone, share_price, total_pool_shares,address_line2
         ) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
         RETURNING id;
     `;
 
@@ -36,6 +36,7 @@ const createCompanyByAdmin = async (companyData) => {
     companyData.phone,
     companyData.share_price,
     companyData.total_pool_shares,
+    companyData.address_line2
   ];
 
   const client = await pool.connect(); // Get a client from the pool for a transaction
@@ -113,6 +114,10 @@ const updateCompanyByAdmin = async (companyId, adminUserId, updateData) => {
   if (updateData.address_line1) {
     fields.push(`address_line1 = $${fields.length + 1}`);
     values.push(updateData.address_line1);
+  }
+  if (updateData.address_line2) {
+    fields.push(`address_line2 = $${fields.length + 1}`);
+    values.push(updateData.address_line2);
   }
   if (updateData.city) {
     fields.push(`city = $${fields.length + 1}`);

@@ -34,6 +34,7 @@ const createExerciseController = async (req, res) => {
     );
 
     return res.status(201).json({
+      status : true,
       message: "Exercise created successfully",
       exercise: result,
     });
@@ -54,7 +55,7 @@ const getExerciseHistroyOfGrantController = async (req, res) => {
     const history = await getExerciseHistoryOfGrantService(grantId);
 
     return res.status(200).json({
-      success: true,
+      status : true,
       count: history.length,
       data: history,
     });
@@ -63,7 +64,7 @@ const getExerciseHistroyOfGrantController = async (req, res) => {
 
     const statusCode = err.statusCode || 500;
     return res.status(statusCode).json({
-      success: false,
+      status: false,
       message: err.message || "Failed to fetch Exercise History",
     });
   }
@@ -71,23 +72,22 @@ const getExerciseHistroyOfGrantController = async (req, res) => {
 
 const getExercisesUponStatusController = async (req, res) => {
   try {
-    // GET requests use req.query for ?status=value
-    const { status } = req.query;
+    const empId = req.params.id;
+    // Default to 'all' if no status is provided in the query string
+    const status = req.query.status || 'all';
 
-    const data = await getExercisesUponStatusService(status);
+    const data = await getExercisesUponStatusService(empId, status);
 
     return res.status(200).json({
-      success: true,
+      status: true,
       count: data.length,
       data: data,
     });
   } catch (err) {
-    // Corrected variable from 'error' to 'err' to prevent reference errors
     console.error("Error In getExercisesUponStatusController:", err.message);
-
     const statusCode = err.statusCode || 500;
     return res.status(statusCode).json({
-      success: false,
+      status: false,
       message: err.message || "Failed to fetch Exercises",
     });
   }
@@ -108,7 +108,7 @@ const approveOrRejectExerciseController = async (req, res) => {
     );
 
     return res.status(200).json({
-      success: true,
+      status : true,
       message: `Exercise request has been ${action}ed successfully.`,
       data: result,
     });
@@ -116,7 +116,7 @@ const approveOrRejectExerciseController = async (req, res) => {
     console.error("Error In approveOrRejectExerciseController:", err.message);
     const statusCode = err.statusCode || 500;
     return res.status(statusCode).json({
-      success: false,
+      status: false,
       message: err.message || "Failed to process Exercise request",
     });
   }

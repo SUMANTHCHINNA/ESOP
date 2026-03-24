@@ -1,4 +1,4 @@
-const {createValuationRepository,getActiveValuationRepository,getValuationHistoryRepository,getValuationByDateRepository} = require('../repository/fmvValuationRepository')
+const {createValuationRepository,getActiveValuationRepository,deleteValuationRepository,getValuationHistoryRepository,getValuationByDateRepository,updateValuationRepository} = require('../repository/fmvValuationRepository')
 
 const createValuationService = async (valuationData) => {
     if (!valuationData.share_price || valuationData.share_price <= 0) {
@@ -53,9 +53,31 @@ const getValuationByDateService = async (companyId, targetDate) => {
     return valuation;
 };
 
+const updateValuationService = async (valuationId, updateFields) => {
+    try {
+        // You can add business logic here (e.g., checking if valuation_date is in the future)
+        return await updateValuationRepository(valuationId, updateFields);
+    }
+    catch (err) {
+        throw err;
+    }
+}
+
+const deleteValuationService =async (valuationId) =>{
+    try{
+        return await deleteValuationRepository(valuationId);
+
+    }
+    catch(err){
+        throw err
+    }
+}
+
 module.exports = {
     createValuationService,
     getActiveValuationService,
     getValuationHistoryService,
-    getValuationByDateService
+    getValuationByDateService,
+    updateValuationService,
+    deleteValuationService
 }

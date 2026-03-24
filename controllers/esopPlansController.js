@@ -11,6 +11,7 @@ const createEsopPlanController = async (req, res) => {
     const esopPlan = await createEsopPlanService(req.body);
 
     return res.status(201).json({
+      status : true,
       message: "ESOP Plan created successfully",
       plan: esopPlan,
     });
@@ -26,9 +27,11 @@ const createEsopPlanController = async (req, res) => {
 const getEsopPlansController = async (req, res) => {
   try {
     let companyId = req.params.id;
+    console.log(`Company Id : ${companyId}`)
     const esopPlan = await getEsopPlanService(companyId);
 
     return res.status(201).json({
+      status : true,
       message: "ESOP Plans fetched successfully",
       data: esopPlan,
     });
@@ -43,11 +46,12 @@ const getEsopPlansController = async (req, res) => {
 
 const updateEsopPlanController = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id  = req.params.id;
     const planData = req.body;
     const result = await updateEsopPlanService(id, planData);
 
     return res.status(200).json({
+      status : true,
       message: "ESOP Plan updated successfully",
       data: result,
     });

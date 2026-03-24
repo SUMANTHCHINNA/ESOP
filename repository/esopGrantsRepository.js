@@ -49,13 +49,35 @@ const createGrantRepository = async (grantData) => {
 };
 
 const getGrantDetailsOfAnCompanyRepository = async (companyId) => {
-  const sql = "SELECT * FROM esop_grants WHERE company_id = $1";
+  // We join 'users' to get the employee name and 'esop_plans' to get the plan name
+  const sql = `
+    SELECT 
+        g.*,
+        -- Maps u.full_name from your 'users' table to 'employee_name' for the UI
+        json_build_object(
+            'id', u.id,
+            'employee_name', u.full_name,
+            'status', u.status
+        ) AS employees,
+        -- Maps p.plan_name from 'esop_plans' for the UI
+        json_build_object(
+            'id', p.id,
+            'plan_name', p.plan_name
+        ) AS esop_plans
+    FROM esop_grants g
+    LEFT JOIN users u ON g.employee_id = u.id
+    LEFT JOIN esop_plans p ON g.esop_plan_id = p.id
+    WHERE g.company_id = $1
+    OR g.employee_id = $1
+    OR g.id = $1
+    ORDER BY g.grant_date DESC;
+  `;
 
   try {
     const result = await pool.query(sql, [companyId]);
     return result.rows;
   } catch (dbError) {
-    console.error("Database execution error:", dbError.message);
+    console.error("Database execution error in getGrantDetailsOfAnCompanyRepository:", dbError.message);
     throw dbError;
   }
 };
@@ -87,37 +109,58 @@ const updateGrantsRepository = async (grantId, updateFields) => {
   const keys = Object.keys(updateFields);
   if (keys.length === 0) return null;
 
+  // 1. Build the SET clause dynamically
   const setClause = keys
     .map((key, index) => {
+      // If the field is one of the share counters, we increment it (+ =)
+      // Otherwise, we overwrite it (=)
       if (
         key === "exercised_shares" ||
         key === "vested_shares" ||
         key === "lapsed_shares"
       ) {
-        return `${key} = ${key} + $${index + 1}`;
+        return `${key} = COALESCE(${key}, 0) + $${index + 1}`;
       }
       return `${key} = $${index + 1}`;
     })
     .join(", ");
 
+  // 2. Prepare the SQL
+  // We use a subquery/CTE or explicit logic to ensure the 'status' 
+  // transition happens based on the values AFTER the increment.
   const sql = `
         UPDATE esop_grants 
         SET 
             ${setClause}, 
-            status = CASE 
-                WHEN (exercised_shares + lapsed_shares) >= total_shares 
-                THEN 'fully_exercised'::grant_status_enum
-                ELSE status::grant_status_enum  -- Added explicit cast here
-            END,
             updated_at = NOW()
         WHERE id = $${keys.length + 1}
         RETURNING *;
     `;
 
+  // 3. Status Transition Logic
+  // Since you want 'fully_exercised' to be automatic, we can run 
+  // a second check or handle it in a single query using a CTE (Common Table Expression)
+  // to be 100% safe with the math.
+
+  const finalSql = `
+    WITH updated AS (
+        ${sql}
+    )
+    UPDATE esop_grants
+    SET status = CASE 
+        WHEN (exercised_shares + lapsed_shares) >= total_shares 
+        THEN 'fully_exercised'::grant_status_enum
+        ELSE status
+    END
+    FROM updated
+    WHERE esop_grants.id = updated.id
+    RETURNING esop_grants.*;
+  `;
+
   const values = [...Object.values(updateFields), grantId];
 
   try {
-    const result = await pool.query(sql, values);
+    const result = await pool.query(finalSql, values);
     return result.rows[0];
   } catch (dbError) {
     console.error("Database Error in updateGrantsRepository:", dbError.message);
@@ -125,10 +168,52 @@ const updateGrantsRepository = async (grantId, updateFields) => {
   }
 };
 
+const getEsopPlanAndEmployeeDetailsByGrantIdRepository = async (grantId) => {
+  const sql = `
+    SELECT 
+        g.*,
+        -- Nesting plan details into a JSON object
+        json_build_object(
+            'id', p.id,
+            'plan_name', p.plan_name,
+            'plan_type', p.plan_type,
+            'strike_price_type', p.strike_price_type,
+            'default_strike_price', p.default_strike_price
+        ) AS esop_plan,
+        -- Nesting user details into a JSON object
+        json_build_object(
+            'id', u.id,
+            'full_name', u.full_name,
+            'user_email', u.user_email,
+            'employee_id', u.employee_id,
+            'department', u.department
+        ) AS user_details
+    FROM esop_grants g
+    JOIN esop_plans p ON g.esop_plan_id = p.id
+    JOIN users u ON g.employee_id = u.id
+    WHERE g.id = $1 OR g.company_id = $1;
+  `;
+
+  try {
+    const result = await pool.query(sql, [grantId]);
+    
+    // Return the single object (equivalent to Supabase .single())
+    return result.rows.length > 0 ? result.rows[0] : null;
+  } catch (dbError) {
+    console.error(
+      "Database Error in getEsopPlanAndEmployeeDetailsByGrantIdRepository:",
+      dbError.message
+    );
+    throw dbError;
+  }
+};
+
+
 module.exports = {
   createGrantRepository,
   getGrantDetailsOfAnCompanyRepository,
   getEmployeeGrantsRepository,
   getEmployeeGrantDetailsRepository,
   updateGrantsRepository,
+  getEsopPlanAndEmployeeDetailsByGrantIdRepository
 };

@@ -19,25 +19,25 @@ services:
     container_name: esop_adminer
     restart: always
     ports:
-      - "8080:8080"
+      - "8081:8080"
     depends_on:
       - esop-db
 
   # Node/Express Backend - ESOP Logic
-  esop-api:
-    build: .
-    container_name: esop_backend_api
-    restart: on-failure
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
-    environment:
-      DATABASE_URL: postgres://esop_admin:secure_password_123@esop-db:5432/esop_management
-      NODE_ENV: development
-    depends_on:
-      - esop-db
+  # esop-api:
+  #   build: .
+  #   container_name: esop_backend_api
+  #   restart: on-failure
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - .:/usr/src/app
+  #     - /usr/src/app/node_modules
+  #   environment:
+  #     DATABASE_URL: postgres://esop_admin:secure_password_123@esop-db:5432/esop_management
+  #     NODE_ENV: development
+  #   depends_on:
+  #     - esop-db
 
 volumes:
   postgres_data:

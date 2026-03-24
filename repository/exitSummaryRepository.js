@@ -47,11 +47,11 @@ const exitSummaryRepository = {
             const keys = Object.keys(summary);
             const values = Object.values(summary);
             const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-            
+
             const summarySql = `
                 INSERT INTO esop_exit_summaries (${keys.join(', ')}) 
                 VALUES (${placeholders}) RETURNING *`;
-            
+
             const result = await client.query(summarySql, values);
 
             await client.query('COMMIT');
@@ -77,7 +77,50 @@ const getExitSummaryRepository = {
         `;
         const result = await pool.query(sql, [employeeId]);
         return result.rows[0];
+    },
+
+    updateExitSummaryRepository: async (id, updateData) => {
+        const fields = [];
+        const values = [];
+        let placeholderIndex = 1;
+
+        // Dynamically build the SET clause
+        for (const [key, value] of Object.entries(updateData)) {
+            // Basic security check: ensure key exists in your schema or use a whitelist
+            fields.push(`${key} = $${placeholderIndex}`);
+            values.push(value);
+            placeholderIndex++;
+        }
+
+        if (fields.length === 0) return null;
+
+        // Add ID to values array for the WHERE clause
+        values.push(id);
+        const idPlaceholder = `$${placeholderIndex}`;
+
+        const sql = `
+        UPDATE esop_exit_summaries 
+        SET ${fields.join(', ')} 
+        WHERE id = ${idPlaceholder} 
+        RETURNING *
+    `;
+
+        const result = await pool.query(sql, values);
+        return result.rows[0];
+    },
+    deleteExitSummaryRepository: async (id) => {
+        // Adding RETURNING * gives you the deleted row's data
+        const sql = `
+        DELETE FROM esop_exit_summaries 
+        WHERE id = $1 OR employee_id = $1
+        RETURNING *
+    `;
+
+        const result = await pool.query(sql, [id]);
+
+        // Returns the deleted object if it existed, otherwise null
+        return result.rows.length > 0 ? result.rows[0] : null;
     }
 };
 
-module.exports = { exitSummaryRepository,getExitSummaryRepository };
+module.exports = { exitSummaryRepository, getExitSummaryRepository };

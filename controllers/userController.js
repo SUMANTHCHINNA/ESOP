@@ -18,7 +18,7 @@ const getUserDetailsController = async (req, res) => {
 
     // Success Response
     return res.status(200).json({
-      success: true,
+      status: true,
       message: "User details retrieved successfully",
       data: userDetails,
     });
@@ -42,6 +42,7 @@ const getUserDetailsOfAnCompanyController = async (req, res) => {
     const { company, employees } = await getCompanyAndEmployeesService(adminId);
 
     return res.status(200).json({
+      status: true,
       message: "Company details and employee list retrieved successfully",
       company,
       employees,
@@ -65,6 +66,7 @@ const terminateUserByIdController = async (req, res) => {
 
     // Success Response
     return res.status(200).json({
+      status: true,
       message: "User terminated successfully",
       user: terminatedUser,
     });
@@ -87,13 +89,17 @@ const getUserRoleController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Unauthorized: No User ID" });
+        .json({
+          status: false,
+          message: "Unauthorized: No User ID"
+        });
     }
 
     const role = await getUserRoleService(userId);
 
     return res.status(200).json({
-      success: true,
+      status: true,
+
       message: "Employment type fetched successfully",
       role: role,
     });
@@ -102,7 +108,7 @@ const getUserRoleController = async (req, res) => {
 
     // If the table 'users' doesn't exist, it will fall here with a 500
     return res.status(err.statusCode || 500).json({
-      success: false,
+      status: false,
       message: err.message || "Internal Server Error",
     });
   }
@@ -115,20 +121,24 @@ const updateUserDetailsController = async (req, res) => {
     if (!userId) {
       return res
         .status(400)
-        .json({ success: false, message: "User ID is required" });
+        .json({
+          status: false,
+          message: "User ID is required"
+        });
     }
 
     const result = await updateUserDetailsService(userId, req.body);
 
     return res.status(200).json({
-      success: true,
+      status: true,
+
       message: "User details updated successfully",
       data: result,
     });
   } catch (error) {
     console.error("Error in updateUserDetailsController:", error.message);
     return res.status(error.statusCode || 500).json({
-      success: false,
+      status: false,
       error: error.message,
     });
   }
@@ -136,26 +146,36 @@ const updateUserDetailsController = async (req, res) => {
 
 const updatePasswordController = async (req, res) => {
   try {
-    // userId should come from your auth middleware (req.user or req.userId)
     const userId = req.params.id;
-    const { newPassword } = req.body;
+    
+    // 1. Destructure both possible keys. 
+    // If one is missing, it will be undefined.
+    const { newPassword, user_pass } = req.body; 
 
-    if (!newPassword) {
-      return res
-        .status(400)
-        .json({ success: false, message: "New password is required." });
+    console.log("Request Body:", req.body);
+
+    // 2. Use the OR operator (||) to pick whichever one is provided
+    const finalPassword = newPassword || user_pass;
+
+    // 3. Check if we actually got a password from either key
+    if (!finalPassword) {
+      return res.status(400).json({ 
+        status: false, 
+        message: "New password is required." 
+      });
     }
 
-    await updatePasswordService(userId, newPassword);
+    // 4. Pass the validated password to your service
+    await updatePasswordService(userId, finalPassword);
 
     return res.status(200).json({
-      success: true,
+      status: true,
       message: "Password updated successfully.",
     });
   } catch (err) {
     console.error("Error in updatePasswordController:", err.message);
     return res.status(err.statusCode || 500).json({
-      success: false,
+      status: false,
       message: err.message,
     });
   }
@@ -169,14 +189,14 @@ const IspasswordChangedController = async (req, res) => {
     const result = await IspasswordChangedService(userId);
 
     return res.status(200).json({
-      success: true,
+      status: true,
       message: "Password status fetched successfully.",
       password_changed: result.password_changed,
     });
   } catch (err) {
     console.error("Error in IspasswordChangedController:", err.message);
     return res.status(err.statusCode || 500).json({
-      success: false,
+      status: false,
       error: err.message,
     });
   }
@@ -187,13 +207,13 @@ const deleteAnEmployeeController = async (req, res) => {
     const userid = req.params.id;
     await deleteAnEmployeeService(userid);
     return res.status(200).json({
-      success: true,
+      status: true,
       message: "Employee deleted successfully.",
     });
   } catch (err) {
     console.error("Error in IspasswordChangedController:", err.message);
     return res.status(err.statusCode || 500).json({
-      success: false,
+      status: false,
       error: err.message,
     });
   }

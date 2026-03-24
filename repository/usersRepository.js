@@ -179,6 +179,28 @@ const deleteAnEmployeeRepository = async (userId) => {
   }
 };
 
+const getActiveEmployeeOfAnCompanyRepository = async (companyId) => {
+  try {
+    // Added the missing ' after active and separated it from the ORDER BY clause
+    const sql = `
+      SELECT * FROM users 
+      WHERE company_id = $1 
+      AND status = 'active' 
+      ORDER BY full_name ASC
+    `;
+    const values = [companyId];
+    const result = await pool.query(sql, values);
+    
+    // Return the actual data (rows) instead of just a boolean
+    return result.rows; 
+  }
+  catch (DbError) {
+    // Updated log message to reflect a 'fetch' error rather than 'deletion'
+    console.error("Database fetch error:", DbError.message);
+    throw DbError;
+  }
+}
+
 module.exports = {
   getAllEmployeesOfAnCompany,
   checkAdminCompanyDetails,
@@ -189,4 +211,5 @@ module.exports = {
   updatePasswordRepository,
   IspasswordChangedRepository,
   deleteAnEmployeeRepository,
+  getActiveEmployeeOfAnCompanyRepository
 };

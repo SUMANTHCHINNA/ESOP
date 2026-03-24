@@ -10,7 +10,10 @@ const {
   updatePasswordRepository,
   IspasswordChangedRepository,
   deleteAnEmployeeRepository,
+  getActiveEmployeeOfAnCompanyRepository
 } = require("../repository/usersRepository");
+
+const bcrypt = require('bcrypt');
 
 const getUserDetailsService = async (userId) => {
   if (!userId) {
@@ -142,6 +145,16 @@ const deleteAnEmployeeService = async (userId) => {
   }
 };
 
+const getActiveEmployeeOfAnCompanyService = async(companyId)=>{
+  try{
+    const response = await getActiveEmployeeOfAnCompanyRepository(companyId);
+    return response;
+  }
+  catch(err){
+    throw err
+  }
+}
+
 module.exports = {
   getUserDetailsService,
   getCompanyAndEmployeesService,
@@ -151,4 +164,5 @@ module.exports = {
   updatePasswordService,
   IspasswordChangedService,
   deleteAnEmployeeService,
+  getActiveEmployeeOfAnCompanyService
 };

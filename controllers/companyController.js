@@ -4,11 +4,10 @@ const {
   updateCompanyService,
   getCompanyAdminDetailsService,
 } = require("../services/companyService");
-const { getUserDetailsService } = require("../services/userService");
+const { getUserDetailsService,getActiveEmployeeOfAnCompanyService } = require("../services/userService");
 
 const createCompanyController = async (req, res) => {
   try {
-    console.log(req.body);
     const adminId = req.body.admin_user_id;
     console.log(`Admin Id : ${adminId}`);
 
@@ -16,7 +15,7 @@ const createCompanyController = async (req, res) => {
     const company = await createCompanyService(req.body, adminId);
 
     return res.status(201).json({
-      success: true,
+      status: true,
       message: "Company created successfully",
       company: company,
     });
@@ -55,7 +54,7 @@ const getCompanyController = async (req, res) => {
 
     // Success Response
     return res.status(200).json({
-      success: true,
+      status: true,
       message: "Company details retrieved successfully",
       data: company,
     });
@@ -84,7 +83,7 @@ const updateCompanyController = async (req, res) => {
     );
 
     return res.status(200).json({
-      success : true,
+      status: true,
       message: "Company updated successfully",
       company: updatedCompany,
     });
@@ -103,7 +102,7 @@ const getCompanyAdminDetailsController = async (req, res) => {
     const companyId = req.params.id;
     const result = await getCompanyAdminDetailsService(companyId);
     return res.status(200).json({
-      success: true,
+      status: true,
       message: "Company AdminId Fetched successfully",
       result,
     });
@@ -117,9 +116,30 @@ const getCompanyAdminDetailsController = async (req, res) => {
   }
 };
 
+const getActiveEmployeeOfAnCompanyController = async (req, res) => {
+  try {
+    const companyId = req.params.id;
+    const result = await getActiveEmployeeOfAnCompanyService(companyId);
+    return res.status(200).json({
+      status: true,
+      message: "Company Employees Fetched successfully",
+      data : result,
+    });
+  }
+  catch (err) {
+      console.error("Error In getActiveEmployeeOfAnCompanyController:", err.message);
+
+      const statusCode = err.statusCode || 500;
+      return res.status(statusCode).json({
+        message: err.message || "Internal server error",
+      });
+    }
+  }
+
 module.exports = {
-  createCompanyController,
-  getCompanyController,
-  updateCompanyController,
-  getCompanyAdminDetailsController,
-};
+    createCompanyController,
+    getCompanyController,
+    updateCompanyController,
+    getCompanyAdminDetailsController,
+    getActiveEmployeeOfAnCompanyController
+  };

@@ -17,8 +17,12 @@ const upload = multer({
 });
 
 router.post("/register", createUserController);
-router.post("/login", userLoginController);
+router.post("/login",userLoginController);
 router.post("/logout", logoutController);
+
+router.get('/',(req,res)=>{
+  res.send("Working");
+})
 
 router.post("/AddEmployee", createUserByAdminController); // Reusing the same controller for both user and employee creation, can be differentiated based on request body
 router.post(

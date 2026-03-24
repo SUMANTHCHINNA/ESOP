@@ -13,6 +13,7 @@ const fmvValuationRouter = require("./routes/fmvValiadtionRouter");
 const documentTemplateRouter = require("./routes/documentTemplateRouter");
 const auditRouter = require("./routes/auditRouter");
 const exitSummary = require("./routes/exitSummaryRouter");
+
 const {
   createUsersTable,
   createCompaniesTable,
@@ -24,12 +25,13 @@ const {
   createDocumentTemplateTable,
   auditFreezeTable,
   createExitSummariesTable,
+  createDocumentsTable
 } = require("./modals/tables");
 
 dotenv.config();
 
 const corsOptions = {
-  origin: "https://9qfhs4-8080.csb.app",
+  origin: " http://localhost:8080",
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   // allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -55,22 +57,33 @@ const port = process.env.PORT || 3000;
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });
-
 app.listen(port, async () => {
   try {
-    await createUsersTable();
-    await createCompaniesTable();
-    await createEsopPlanTable();
+    // 1. Create Enums first (They define the custom types used in tables)
     await createEnums();
-    await createEsopGrantsTable();
-    await createExercisesTable();
+
+    // 2. Create Parent Tables (No foreign keys to others)
+    await createCompaniesTable();
+
+    // 3. Create Tables that depend on Companies
+    await createUsersTable();
+    await createEsopPlanTable();
     await createFvmValuationsTable();
+
+    // 4. Create Tables that depend on Users and Plans
+    await createEsopGrantsTable();
     await createDocumentTemplateTable();
+
+    // 5. Create Tables that depend on Grants
+    await createExercisesTable();
     await auditFreezeTable();
     await createExitSummariesTable();
-    console.log("Users table creation initiated");
+    await createDocumentsTable();
+    
+    console.log("Database schema initialization completed.");
   } catch (error) {
-    console.error("Error creating tables:", error);
+    console.error("Database Initialization failed. Stopping server.", error);
+    process.exit(1); // Exit if DB setup fails
   }
   console.log(`Server running at http://localhost:${port}`);
 });

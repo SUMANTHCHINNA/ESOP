@@ -1,3 +1,10 @@
+const { Pool } = require("pg");
+require("dotenv").config();
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
 const auditFreezeRepository = {
     setFreeze: async (companyId, adminId, date, notes) => {
         const client = await pool.connect();
@@ -15,9 +22,9 @@ const auditFreezeRepository = {
                 INSERT INTO audit_freeze (company_id, freeze_date, is_active, frozen_by, notes)
                 VALUES ($1, $2, TRUE, $3, $4)
                 RETURNING *`;
-            
+
             const result = await client.query(sql, [companyId, date, adminId, notes]);
-            
+
             await client.query('COMMIT');
             return result.rows[0];
         } catch (err) {

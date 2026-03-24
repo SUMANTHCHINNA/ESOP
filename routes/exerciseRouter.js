@@ -13,7 +13,7 @@ router.get(
   "/getExerciseHistoryOfGrant/:id",
   getExerciseHistroyOfGrantController
 );
-router.get("/getExercisesUponStatus", getExercisesUponStatusController);
+router.get("/getExercisesUponStatus/:id", getExercisesUponStatusController);
 router.patch("/ApproveOrRejectExercise/:id", approveOrRejectExerciseController);
 
 router.use(middleware);

@@ -69,18 +69,25 @@ const getExerciseHistoryOfGrantRepository = async (grantId) => {
     throw dbError;
   }
 };
+const getExercisesUponStatusRepository = async (empId, status) => {
+  // If status is 'all', we set it to null so the SQL logic handles it
+  const statusFilter = (status === 'all' || !status) ? null : status;
 
-const getExercisesUponStatusRepository = async (status) => {
   const sql = `
-        SELECT e.*, u.full_name, g.grant_name 
+        SELECT 
+            e.*, 
+            u.full_name, 
+            g.grant_name 
         FROM exercises e
         JOIN users u ON e.employee_id = u.id
         JOIN esop_grants g ON e.grant_id = g.id
-        WHERE e.status = $1::exercise_status_enum
+        WHERE e.employee_id = $1 OR e.company_id = $1
+        AND ($2::exercise_status_enum IS NULL OR e.status = $2::exercise_status_enum)
         ORDER BY e.created_at DESC;
     `;
+
   try {
-    const result = await pool.query(sql, [status]);
+    const result = await pool.query(sql, [empId, statusFilter]);
     return result.rows;
   } catch (dbError) {
     console.error("Database Error:", dbError.message);

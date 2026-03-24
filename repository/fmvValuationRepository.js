@@ -89,9 +89,78 @@ const getValuationByDateRepository = async (companyId, targetDate) => {
     return result.rows[0];
 };
 
+const updateValuationRepository = async (valuationId, updateFields) => {
+    const keys = Object.keys(updateFields);
+    if (keys.length === 0) return null;
+
+    // Map keys to "column_name = $index"
+    const setClause = keys
+        .map((key, index) => `${key} = $${index + 1}`)
+        .join(", ");
+
+    const sql = `
+        UPDATE fmv_valuations 
+        SET 
+            ${setClause}, 
+            updated_at = NOW()
+        WHERE id = $${keys.length + 1}
+        RETURNING *;
+    `;
+
+    const values = [...Object.values(updateFields), valuationId];
+
+    try {
+        const result = await pool.query(sql, values);
+        
+        if (result.rowCount === 0) {
+            const error = new Error("Valuation record not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return result.rows[0];
+    }
+    catch (DbError) {
+        console.error("Database Error in updateValuationRepository:", DbError.message);
+        throw DbError;
+    }
+}
+
+const deleteValuationRepository = async (valuationId) => {
+    try {
+        // 1. DEFINE SQL QUERY
+        // We use a parameterized query ($1) for security
+        const query = `
+            DELETE FROM fmv_valuations 
+            WHERE id = $1
+            RETURNING id;
+        `;
+
+        // 2. EXECUTE QUERY
+        // Assuming 'db' is your database connection pool
+        const result = await db.query(query, [valuationId]);
+
+        // 3. CHECK IF RECORD WAS FOUND
+        if (result.rowCount === 0) {
+            return { status: false, message: "Valuation record not found" };
+        }
+
+        return { status: true, message: "Valuation deleted successfully", id: valuationId };
+
+    } catch (DbError) {
+        // Log the technical error for the server logs
+        console.error('Database Error in deleteValuationRepository:', DbError);
+        
+        // Re-throw to be handled by the Controller/Service layer
+        throw DbError;
+    }
+};
+
 module.exports = {
     createValuationRepository,
     getActiveValuationRepository,
     getValuationHistoryRepository,
-    getValuationByDateRepository
+    getValuationByDateRepository,
+    updateValuationRepository,
+    deleteValuationRepository
 }

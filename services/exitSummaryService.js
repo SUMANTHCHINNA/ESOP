@@ -1,4 +1,4 @@
-const { exitSummaryRepository,getExitSummaryRepository } = require('../repository/exitSummaryRepository');
+const { exitSummaryRepository,getExitSummaryRepository,updateExitSummaryRepository } = require('../repository/exitSummaryRepository');
 
 const exitSummaryService = {
     processEmployeeExit: async (employeeId, adminId, terminationDate, terminationType) => {
@@ -54,7 +54,31 @@ const getExitSummaryService = {
         }
 
         return summary;
+    },
+
+    updateExitSummaryService: async (id, updateData) => {
+    // Business Logic: You could add validation here to ensure 
+    // total_options_unvested + vested = granted, etc.
+    
+    const updatedSummary = await getExitSummaryRepository.updateExitSummaryRepository(id, updateData);
+    
+    if (!updatedSummary) {
+      throw new Error("No exit summary found with the provided ID.");
     }
+
+    return updatedSummary;
+  },
+  deleteExitSummaryService: async (id) => {
+    const isDeleted = await getExitSummaryRepository.deleteExitSummaryRepository(id);
+    
+    if (!isDeleted) {
+      throw new Error("No exit summary found to delete.");
+    }
+
+    return true;
+  }
 };
+
+
 
 module.exports = { exitSummaryService,getExitSummaryService };

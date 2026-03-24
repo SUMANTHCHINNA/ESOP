@@ -2,12 +2,11 @@ const { createEsopPlanByEmployeer, getEsopPlansOfAnCompany, updateEsopPlanReposi
 const { validateFields } = require('../utils/validation');
 
 const createEsopPlanService = async (planData) => {
-    // 1. Define Fields that are ALWAYS required regardless of the vesting method
+    // 1. Updated Required Fields
     const baseRequiredFields = [
-        'company_id', 'plan_name', 'total_shares_reserved', 'effective_date', 'expiry_date',
-        'plan_type', 'currency', 'vesting_start_reference', 'default_vesting_period_years',
-        'default_vesting_frequency', 'default_cliff_months', 'vesting_method', 'strike_price_type',
-        'default_strike_price', 'post_termination_exercise_days'
+        'company_id', 'plan_name', 'total_shares_reserved', 'face_value_per_share',
+        'effective_date', 'plan_type', 'currency', 'vesting_method', 
+        'strike_price_type', 'default_strike_price', 'post_termination_exercise_days'
     ];
 
     // 2. Initial Validation
@@ -18,31 +17,46 @@ const createEsopPlanService = async (planData) => {
         throw error;
     }
 
-    // 3. Conditional Validation for 'percentage' method
+    // 3. SET STATUS CORRECTLY
+    // If UI sends status, use it; otherwise, default to 'active'
+    // This ensures it matches your 'esopplan_status_enum'
+    planData.status = planData.status || 'active';
+
+    // 4. Percentage Validation Logic
     if (planData.vesting_method === 'percentage') {
-        if (!planData.vesting_percentages || !Array.isArray(planData.vesting_percentages) || planData.vesting_percentages.length === 0) {
-            const error = new Error("vesting_percentages is required and must be an array when vesting_method is 'percentage'");
+        if (!planData.vesting_percentages || !Array.isArray(planData.vesting_percentages)) {
+            const error = new Error("vesting_percentages array is required for percentage method");
             error.statusCode = 400;
             throw error;
         }
-
-        // Validate that total percentage adds up to 100
         const total = planData.vesting_percentages.reduce((acc, curr) => acc + (Number(curr.percentage) || 0), 0);
         if (total !== 100) {
-            const error = new Error(`Total vesting percentage must equal 100. Current total: ${total}`);
+            const error = new Error(`Total percentage must be 100. Current: ${total}`);
             error.statusCode = 400;
             throw error;
         }
     } else {
-        // If 'linear', explicitly set to null so it doesn't cause DB issues
         planData.vesting_percentages = null;
     }
 
-    // 4. Default shares_allocated to 0 if not provided
-    planData.shares_allocated = planData.shares_allocated || 0;
+    // 5. Final Data Sanitization
+    const sanitizedData = {
+        ...planData,
+        shares_allocated: planData.shares_allocated || 0,
+        // Ensure strings are trimmed and nulls are handled for DB
+        plan_document_url: planData.plan_document_url || null,
+        board_resolution_url: planData.board_resolution_url || null,
+        shareholder_resolution_url: planData.shareholder_resolution_url || null,
+        fmv_source: planData.fmv_source || null,
+        board_approval_date: planData.board_approval_date || null
+    };
 
-    // 5. Call Repository
-    const result = await createEsopPlanByEmployeer(planData);
+    // 6. Call Repository
+    const result = await createEsopPlanByEmployeer(sanitizedData);
+    
+    if (!result || result.rows.length === 0) {
+        throw new Error("Failed to create ESOP plan");
+    }
 
     return result.rows[0];
 };

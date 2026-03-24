@@ -3,6 +3,7 @@ const {
   getGrantDetailsOfAnCompanyService,
   getEmployeeGrantsService,
   updateGrantsService,
+  getEsopPlanAndEmployeeDetailsByGrantIdService
 } = require("../services/esopGrantsService");
 const { getCompanyId } = require("../repository/usersRepository");
 
@@ -24,6 +25,7 @@ const createGrantController = async (req, res) => {
     const newGrant = await createGrantService(grantData);
 
     return res.status(201).json({
+      status : true,
       message: "Grant successfully assigned and initialized",
       data: newGrant,
     });
@@ -35,12 +37,12 @@ const createGrantController = async (req, res) => {
 
 const getGrantDetailsOfAnCompanyController = async (req, res) => {
   try {
-    let email = req.user.user_email;
-    const companyId = await getCompanyId(email);
+    let companyId = req.params.id;
     const grantDetailsOfAnCompany = await getGrantDetailsOfAnCompanyService(
       companyId
     );
     return res.status(201).json({
+      status : true,
       message: "Grant Details of an company Fetched Successfully",
       data: grantDetailsOfAnCompany,
     });
@@ -59,6 +61,7 @@ const getEmployeeGrantsController = async (req, res) => {
     // let companyId = await getCompanyId(req.user.user_email);
     const grantDetails = await getEmployeeGrantsService(employeeId);
     return res.status(201).json({
+      status : true,
       message: "Grants of an Employee Fetched Successfully",
       data: grantDetails,
     });
@@ -76,6 +79,7 @@ const updateGrantsController = async (req, res) => {
     const updatedGrantDetails = await updateGrantsService(grantId, req.body);
 
     return res.status(200).json({
+      status : true,
       message: "Grant updated successfully",
       data: updatedGrantDetails,
     });
@@ -86,9 +90,41 @@ const updateGrantsController = async (req, res) => {
   }
 };
 
+const getEsopPlanAndEmployeeDetailsByGrantIdController = async(req, res) => {
+  try {
+    const grantId = req.params.id;
+    
+    // FIX 1: Capture the result from the service into a variable
+    const grantData = await getEsopPlanAndEmployeeDetailsByGrantIdService(grantId);
+
+    // FIX 2: Check if data exists before returning 200
+    if (!grantData) {
+      return res.status(404).json({
+        status: false,
+        message: "Grant details not found"
+      });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Grant fetched successfully",
+      data: grantData, // FIX 3: Use the variable name you defined above
+    });
+  }
+  catch(err) {
+    console.error("Error in getEsopPlanAndEmployeeDetailsByGrantIdController:", err.message);
+    const statusCode = err.statusCode || 500;
+    return res.status(statusCode).json({ 
+      status: false,
+      error: err.message 
+    });
+  }
+}
+
 module.exports = {
   createGrantController,
   getGrantDetailsOfAnCompanyController,
   getEmployeeGrantsController,
   updateGrantsController,
+  getEsopPlanAndEmployeeDetailsByGrantIdController
 };

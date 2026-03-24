@@ -1,4 +1,4 @@
-const {createDocumentTemplateRepository,getDefaultTemplateRepository} = require('../repository/docuementTemplateRepository')
+const {createDocumentTemplateRepository,getDefaultTemplateRepository,deleteDocumentTemplateRepository,getDocumentTemplateByTypeRepository,updateDocumentTemplateRepository} = require('../repository/docuementTemplateRepository')
  
 const createDocumentTemplateService = async (templateData) => {
     if (!templateData.company_id || !templateData.created_by) {
@@ -16,26 +16,81 @@ const createDocumentTemplateService = async (templateData) => {
     return await createDocumentTemplateRepository(templateData);
 };
 
-const getDefaultTemplateService = async (companyId, templateType) => {
-    // This check was triggering the error because templateType was undefined
-    if (!templateType) {
-        const error = new Error('Template type is required.');
-        error.statusCode = 400;
-        throw error;
+const getDefaultTemplateService = async (companyId) => {
+    try {
+        const template = await getDefaultTemplateRepository(companyId);
+        
+        if (!template) {
+            const error = new Error("No default document template found for this company.");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return template;
+    } catch (err) {
+        throw err;
     }
-
-    const template = await getDefaultTemplateRepository(companyId, templateType);
-
-    if (!template) {
-        const error = new Error(`No default template found for type: ${templateType}`);
-        error.statusCode = 404;
-        throw error;
-    }
-
-    return template;
 };
+
+const deleteDocumentTemplateService = async (id) => {
+    try {
+        const isDeleted = await deleteDocumentTemplateRepository(id);
+
+        if (!isDeleted) {
+            const error = new Error("Document template not found or already deleted.");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return true;
+    }
+    catch (err) {
+        throw err;
+    }
+}
+const updateDocumentTemplateService = async (id, updateData) => {
+    try {
+        // Business logic: automatically update the 'updated_at' timestamp
+        updateData.updated_at = new Date();
+
+        const result = await updateDocumentTemplateRepository(id, updateData);
+
+        if (!result) {
+            const error = new Error("Document template not found.");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return result;
+    }
+    catch (err) {
+        throw err;
+    }
+}
+
+const getDocumentTemplateByTypeService = async (companyId, type) => {
+    try {
+        const template = await getDocumentTemplateByTypeRepository(companyId, type);
+
+        if (!template) {
+            const error = new Error(`No template found for type: ${type}`);
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return template;
+    }
+    catch (err) {
+        // Re-throw the error to be caught by the controller
+        throw err;
+    }
+};
+
 
 module.exports = {
     createDocumentTemplateService,
-    getDefaultTemplateService
+    getDefaultTemplateService,
+    deleteDocumentTemplateService,
+    updateDocumentTemplateService,
+    getDocumentTemplateByTypeService
 }

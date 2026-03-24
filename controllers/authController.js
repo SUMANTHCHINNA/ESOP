@@ -16,11 +16,12 @@ const createUserController = async (req, res) => {
     // Set Cookie
     res.cookie("auth_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      // secure: process.env.NODE_ENV === "production",
     });
 
     // Send Success Response
     return res.status(201).json({
+      status : true,
       message: "User registered successfully",
       user: newUser,
       session: { access_token: token },
@@ -45,6 +46,7 @@ const createUserController = async (req, res) => {
 const userLoginController = async (req, res) => {
   try {
     const { user, token } = await userLoginService(req.body);
+    console.log("Working upto here")
 
     // Set secure cookie
     res.cookie("token", token, {
@@ -55,6 +57,7 @@ const userLoginController = async (req, res) => {
     });
 
     return res.status(200).json({
+      status:true,
       message: "Login successful",
       user,
       session: { access_token: token },
@@ -71,7 +74,7 @@ const userLoginController = async (req, res) => {
 
 const logoutController = (req, res) => {
   res.clearCookie("token");
-  res.status(200).json({ message: "Logout successful" });
+  res.status(200).json({ status:true,message: "Logout successful" });
 };
 
 const createUserByAdminController = async (req, res) => {
@@ -113,6 +116,7 @@ const bulkAddEmployeesController = async (req, res) => {
     const createdUsers = await createBulkUsersByAdminService(jsonData);
 
     return res.status(201).json({
+      status : true,
       message: "Bulk Employees created successfully",
       count: createdUsers.length,
       data: createdUsers,

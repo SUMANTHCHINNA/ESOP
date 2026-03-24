@@ -4,11 +4,13 @@ const middleware = require('../Middlewares/auth');
 const {auditFreezeController} = require('../controllers/auditController');
 
 
-router.use(middleware);
 
 router.post('/activate',auditFreezeController.activateFreeze);
-router.get('/active',auditFreezeController.getActiveFreeze);
+router.get('/active/:id',auditFreezeController.getActiveFreeze);
 router.patch('/deactivate/:id',auditFreezeController.deactivateFreeze);
+
+router.use(middleware);
+
 
 
 

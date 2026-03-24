@@ -34,17 +34,14 @@ const getExerciseHistoryOfGrantService = async (grantId) => {
     }
 };
 
-const getExercisesUponStatusService = async (status) => {
-    try {
-        if (!status) {
-            const error = new Error('Status parameter is required');
-            error.statusCode = 400;
-            throw error;
-        }
-        return await getExercisesUponStatusRepository(status);
-    } catch (err) {
-        throw err;
-    }
+const getExercisesUponStatusService = async (empId, status) => {
+  try {
+    // If you specifically want to block certain statuses, do it here.
+    // Otherwise, just pass it to the repository.
+    return await getExercisesUponStatusRepository(empId, status);
+  } catch (err) {
+    throw err;
+  }
 };
 
 const approveOrRejectExerciseService = async (exerciseId, action, adminUserId, rejectionReason) => {

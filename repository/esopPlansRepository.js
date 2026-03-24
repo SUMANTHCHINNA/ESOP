@@ -8,34 +8,43 @@ const pool = new Pool({
 const createEsopPlanByEmployeer = async (planData) => {
   const sql = `
         INSERT INTO esop_plans (
-            company_id, plan_name, total_shares_reserved, shares_allocated, effective_date, expiry_date,
-            plan_type, currency, vesting_start_reference, default_vesting_period_years, default_vesting_frequency,
-            default_cliff_months, vesting_method, vesting_percentages, strike_price_type, default_strike_price, 
-            allow_strike_price_override, post_termination_exercise_days, unvested_lapse_on_termination, 
-            vested_lapse_after_window, acceleration_on_change_of_control, acceleration_on_termination_without_cause,
-            eligible_participants
+            company_id, plan_name, status, plan_type, 
+            total_shares_reserved, shares_allocated, face_value_per_share, currency, 
+            board_approval_date, effective_date, expiry_date, 
+            vesting_method, vesting_start_reference, default_vesting_period_years, 
+            default_vesting_frequency, default_cliff_months, vesting_percentages, 
+            strike_price_type, default_strike_price, allow_strike_price_override, 
+            post_termination_exercise_days, unvested_lapse_on_termination, 
+            vested_lapse_after_window, acceleration_on_change_of_control, 
+            acceleration_on_termination_without_cause, eligible_participants, 
+            fmv_source, plan_document_url, board_resolution_url, shareholder_resolution_url
         ) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23) 
+        VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+            $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
+            $21, $22, $23, $24, $25, $26, $27, $28, $29, $30
+        ) 
         RETURNING *
     `;
 
   const values = [
     planData.company_id,
     planData.plan_name,
+    planData.status || 'active',
+    planData.plan_type,
     planData.total_shares_reserved,
     planData.shares_allocated || 0,
+    planData.face_value_per_share,
+    planData.currency,
+    planData.board_approval_date || null,
     planData.effective_date,
     planData.expiry_date,
-    planData.plan_type,
-    planData.currency,
+    planData.vesting_method,
     planData.vesting_start_reference,
     planData.default_vesting_period_years,
     planData.default_vesting_frequency,
     planData.default_cliff_months,
-    planData.vesting_method,
-    planData.vesting_percentages
-      ? JSON.stringify(planData.vesting_percentages)
-      : null, // Store as JSON string for JSONB column
+    planData.vesting_percentages ? JSON.stringify(planData.vesting_percentages) : null,
     planData.strike_price_type,
     planData.default_strike_price,
     planData.allow_strike_price_override,
@@ -44,24 +53,28 @@ const createEsopPlanByEmployeer = async (planData) => {
     planData.vested_lapse_after_window,
     planData.acceleration_on_change_of_control,
     planData.acceleration_on_termination_without_cause,
-    planData.eligible_participants,
+    planData.eligible_participants || '{}',
+    planData.fmv_source || null,
+    planData.plan_document_url || null,
+    planData.board_resolution_url || null,
+    planData.shareholder_resolution_url || null
   ];
 
   try {
     return await pool.query(sql, values);
   } catch (dbError) {
-    console.error("Database execution error:", dbError.message);
+    console.error("Database execution error in createEsopPlanByEmployeer:", dbError.message);
     throw dbError;
   }
 };
 
 const getEsopPlansOfAnCompany = async (companyId) => {
   // Corrected SQL syntax: removed invalid semicolons and trailing OR
+  console.log(`Trying to fecth Esop Plan Details`)
   const sql = `
     SELECT * FROM esop_plans 
-    WHERE company_id = $1 
-    // OR employee_id = $1 
-    OR id = $1
+    WHERE id = $1 
+    OR company_id = $1 AND status = 'active' ORDER BY plan_name ;
   `;
 
   try {

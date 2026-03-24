@@ -58,19 +58,115 @@ const createDocumentTemplateRepository = async (data) => {
     }
 };
 
-const getDefaultTemplateRepository = async (companyId, templateType) => {
-    const sql = `
-        SELECT * FROM document_templates 
-        WHERE company_id = $1 
-          AND template_type = $2 
-          AND is_default = TRUE 
-        LIMIT 1`;
+const getDefaultTemplateRepository = async (companyId) => {
+    try {
+        // This query matches your partial index: WHERE is_default = TRUE
+        const sql = `
+            SELECT 
+                id, 
+                template_name, 
+                template_type, 
+                content, 
+                placeholders, 
+                version 
+            FROM document_templates 
+            WHERE company_id = $1 
+              AND is_default = TRUE 
+            LIMIT 1;
+        `;
 
-    const result = await pool.query(sql, [companyId, templateType]);
-    return result.rows[0];
+        const result = await pool.query(sql, [companyId]);
+        
+        return result.rows[0] || null;
+    } catch (DbError) {
+        console.error("Database Error in getDefaultTemplateRepository:", DbError.message);
+        throw new Error("Failed to fetch default template from database.");
+    }
+};
+
+const deleteDocumentTemplateRepository = async (id) => {
+    try {
+        const query = `
+            DELETE FROM document_templates 
+            WHERE id = $1
+        `;
+        
+        const result = await pool.query(query, [id]);
+        
+        // Returns true if 1 row was deleted, false if 0 rows were affected
+        return result.rowCount > 0;
+    }
+    catch (DbError) {
+        console.error("Database Error in deleteDocumentTemplateRepository:", DbError.message);
+        throw new Error("Failed to delete document template from database.");
+    }
+}
+
+const updateDocumentTemplateRepository = async (id, updateData) => {
+    try {
+        const fields = [];
+        const values = [];
+        let index = 1;
+
+        for (const [key, value] of Object.entries(updateData)) {
+            fields.push(`${key} = $${index}`);
+            values.push(value);
+            index++;
+        }
+
+        // Add the ID as the last parameter
+        values.push(id);
+        const idParamIndex = index;
+
+        const query = `
+            UPDATE document_templates 
+            SET ${fields.join(", ")}
+            WHERE id = $${idParamIndex}
+            RETURNING *;
+        `;
+
+        const result = await pool.query(query, values);
+        return result.rows[0];
+    }
+    catch (DbError) {
+        console.error("Database Error in updateDocumentTemplateRepository:", DbError.message);
+        throw new Error("Database update failed.");
+    }
+}
+
+
+const getDocumentTemplateByTypeRepository = async (companyId, type) => {
+    try {
+        const sql = `
+            SELECT 
+                id, 
+                template_name, 
+                template_type, 
+                content, 
+                placeholders, 
+                version,
+                is_default
+            FROM document_templates 
+            WHERE company_id = $1 
+              AND template_type = $2
+            ORDER BY created_at DESC
+            LIMIT 1;
+        `;
+
+        const result = await pool.query(sql, [companyId, type]);
+        
+        return result.rows[0] || null;
+    }
+    catch (DbError) {
+        console.error("Database Error in getDocumentTemplateByTypeRepository:", DbError.message);
+        throw new Error("Failed to fetch template by type from database.");
+    }
 };
 
 module.exports = {
     createDocumentTemplateRepository,
-    getDefaultTemplateRepository
+    getDefaultTemplateRepository,
+    deleteDocumentTemplateRepository,
+    updateDocumentTemplateRepository,
+    getDocumentTemplateByTypeRepository
 };

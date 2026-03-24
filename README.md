@@ -1,5 +1,12 @@
 # ESOP
 
+
+## start-up
+- docker-compose up --build
+-- wait until it connects, then
+- npm i
+- npm run dev
+
 ## DataBase Credentials
 
 -- Url -- http://localhost:8080  
@@ -13,10 +20,3 @@ curl -X POST https://didactic-goggles-9v5rq6prr5x3p5r5-3000.app.github.dev/api/a
 
 #### docker-compose up --build --remove-orphans
 
-''
-https://didactic-goggles-9v5rq6prr5x3p5r5-3000.app.github.dev/api/exercises/getExercisesUponStatus?status=pending
-''
-
-''
-https://didactic-goggles-9v5rq6prr5x3p5r5-3000.app.github.dev/api/exercises/ApproveOrRejectExercise/b8f5abf1-ba92-4064-8745-bac2baa5e1fe?action=approve
-''

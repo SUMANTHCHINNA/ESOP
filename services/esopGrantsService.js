@@ -2,6 +2,8 @@ const {
   getGrantDetailsOfAnCompanyRepository,
   getEmployeeGrantsRepository,
   updateGrantsRepository,
+  getEsopPlanAndEmployeeDetailsByGrantIdRepository,
+  createGrantRepository
 } = require("../repository/esopGrantsRepository");
 
 const createGrantService = async (grantData) => {
@@ -84,9 +86,20 @@ const updateGrantsService = async (grantId, updateData) => {
   }
 };
 
+const getEsopPlanAndEmployeeDetailsByGrantIdService = async (grantId) => {
+  try {
+    const result = await getEsopPlanAndEmployeeDetailsByGrantIdRepository(grantId);
+    return result;
+  }
+  catch (err) {
+    throw err;
+  }
+}
+
 module.exports = {
   createGrantService,
   getGrantDetailsOfAnCompanyService,
   getEmployeeGrantsService,
   updateGrantsService,
+  getEsopPlanAndEmployeeDetailsByGrantIdService
 };

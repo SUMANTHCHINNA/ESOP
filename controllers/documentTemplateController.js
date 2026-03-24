@@ -1,5 +1,5 @@
 const { getCompanyId } = require('../repository/usersRepository');
-const {createDocumentTemplateService,getDefaultTemplateService} = require('../services/documentTemplateService')
+const { createDocumentTemplateService, getDefaultTemplateService, deleteDocumentTemplateService, updateDocumentTemplateService,getDocumentTemplateByTypeService } = require('../services/documentTemplateService')
 
 const createDocumentTemplateController = async (req, res) => {
     try {
@@ -20,7 +20,7 @@ const createDocumentTemplateController = async (req, res) => {
         const result = await createDocumentTemplateService(templateData);
 
         return res.status(201).json({
-            success: true,
+            status: true,
             message: "Document template created successfully.",
             data: result
         });
@@ -32,29 +32,118 @@ const createDocumentTemplateController = async (req, res) => {
 
 const getDefaultTemplateController = async (req, res) => {
     try {
-        const companyId = await getCompanyId(req.user.user_email);
-        
-        // Changed from req.params to req.body to match your request
-        const { template_type } = req.body; 
+        const companyId = req.params.id;
 
-        if (!companyId || typeof companyId !== 'string') {
-            return res.status(400).json({ error: "Valid Company ID is required." });
+        // Validation for UUID/String format
+        if (!companyId) {
+            return res.status(400).json({
+                status: false,
+                error: "Company ID is required."
+            });
         }
 
-        // Pass the body variable to the service
-        const result = await getDefaultTemplateService(companyId, template_type);
+        const result = await getDefaultTemplateService(companyId);
 
         return res.status(200).json({
-            success: true,
+            status: true,
             data: result
         });
     } catch (err) {
         console.error('Error in getDefaultTemplateController:', err.message);
-        return res.status(err.statusCode || 500).json({ error: err.message });
+        return res.status(err.statusCode || 500).json({
+            status: false,
+            error: err.message
+        });
     }
 };
 
+const deleteDocumentTemplateController = async (req, res) => {
+    try {
+        // Typically for DELETE, the ID is passed as a query param or in the body
+        const { id } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ status: false, message: "Template ID is required." });
+        }
+
+        await deleteDocumentTemplateService(id);
+
+        return res.status(200).json({
+            status: true,
+            message: "Document template deleted successfully."
+        });
+    }
+    catch (err) {
+        console.error('Error in deleteDocumentTemplateController:', err.message);
+        return res.status(err.statusCode || 500).json({
+            status: false,
+            error: err.message
+        });
+    }
+}
+
+const updateDocumentTemplateController = async (req, res) => {
+    try {
+        const { id, ...updateData } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ status: false, message: "Template ID is required." });
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ status: false, message: "No update fields provided." });
+        }
+
+        const updatedTemplate = await updateDocumentTemplateService(id, updateData);
+
+        return res.status(200).json({
+            status: true,
+            message: "Document template updated successfully.",
+            data: updatedTemplate
+        });
+    }
+    catch (err) {
+        console.error('Error in updateDocumentTemplateController:', err.message);
+        return res.status(err.statusCode || 500).json({
+            status: false,
+            message: err.message
+        });
+    }
+}
+
+const getDocumentTemplateByTypeController = async (req, res) => {
+    try {
+        const companyId = req.params.id;
+        const { type } = req.query; // Extract Type from req.query
+
+        if (!companyId || !type) {
+            return res.status(400).json({ 
+                status: false, 
+                message: "Both Company ID and Template Type are required." 
+            });
+        }
+
+        const result = await getDocumentTemplateByTypeService(companyId, type);
+
+        return res.status(200).json({
+            status: true,
+            data: result
+        });
+    }
+    catch (err) {
+        console.error('Error in getDocumentTemplateByTypeController:', err.message);
+        return res.status(err.statusCode || 500).json({
+            status: false,
+            message: err.message
+        });
+    }
+}
+
+
 module.exports = {
     createDocumentTemplateController,
-    getDefaultTemplateController
+    getDefaultTemplateController,
+    deleteDocumentTemplateController,
+    updateDocumentTemplateController,
+    getDocumentTemplateByTypeController
 }
