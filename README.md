@@ -7,7 +7,7 @@
 - npm i
 - npm run dev
 
-## DataBase Credentials
+## DataBase Credentials -- EDIT
 
 -- Url -- http://localhost:8080  
 System: PostgreSQL
